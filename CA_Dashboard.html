@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rise — CA Prep Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+:root{
+  --bg:#DBDAD5; --bg2:#c9c8c1; --card:#ffffff; --card2:#f1f0ed; --line:#c9c8c1;
+  --text:#00192F; --muted:#5c6f78;
+  --blue:#00192F; --blue-deep:#00192F; --sky:#9AB5AE; --teal:#4c6665; --marigold:#A26D5D; --pink:#A26D5D; --violet:#4c6665;
+  --shadow: 0 4px 18px rgba(0,25,47,0.10);
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  background:linear-gradient(180deg,var(--bg) 0%, var(--bg2) 100%);color:var(--text);padding-bottom:60px;min-height:100vh;}
+header{padding:26px 18px 8px;text-align:center;}
+header h1{margin:0;font-size:23px;font-weight:800;letter-spacing:.2px;color:var(--blue-deep);}
+header p{margin:5px 0 0;color:var(--muted);font-size:13px;}
+.datebar{display:flex;justify-content:center;align-items:center;gap:10px;margin:14px 0 4px;}
+.datebar input[type=date]{background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:7px 12px;font-size:13px;box-shadow:var(--shadow);}
+.datebar button.nav{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:7px 12px;cursor:pointer;color:var(--blue-deep);font-size:14px;box-shadow:var(--shadow);}
+.streak{text-align:center;color:var(--marigold);font-size:13px;margin-bottom:10px;font-weight:600;}
+.tabs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:12px 0 20px;}
+.tab{background:var(--card);border:1px solid var(--line);color:var(--muted);padding:8px 18px;border-radius:20px;font-size:13px;cursor:pointer;box-shadow:var(--shadow);transition:.15s;}
+.tab.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+.wrap{max-width:780px;margin:0 auto;padding:0 16px;}
+.page{display:none;}
+.page.active{display:block;}
+.rings{display:flex;justify-content:center;padding:6px 0 20px;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:16px;box-shadow:var(--shadow);}
+.card h3{margin:0 0 14px;font-size:15px;display:flex;align-items:center;gap:8px;color:var(--text);}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+.field{flex:1;min-width:120px;}
+.field label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;}
+.field input,.field select{width:100%;background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:9px;font-size:14px;}
+.field input:focus,.field select:focus{outline:none;border-color:var(--blue);}
+.checkline{display:flex;align-items:center;gap:10px;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:8px;}
+.checkline input[type=checkbox]{width:18px;height:18px;accent-color:var(--blue);}
+.checkline span{font-size:14px;}
+.checkline .sub{margin-left:auto;color:var(--muted);font-size:12px;}
+.progress-mini{height:7px;background:var(--card2);border-radius:5px;overflow:hidden;margin-top:10px;}
+.progress-mini > div{height:100%;border-radius:5px;transition:width .3s;}
+.subject-row{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;}
+.subject-row .top{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.subject-chip{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.subject-row .subj-name{font-weight:600;font-size:13.5px;flex:1;}
+.subject-row .subj-total{font-size:12px;color:var(--muted);}
+.subj-fields{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;}
+.subj-fields .field{min-width:100px;}
+.remove-subj{background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;}
+.mocktoggle{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-top:6px;}
+.mocktoggle input{accent-color:var(--teal);}
+.study-total-bar{display:flex;justify-content:space-between;align-items:center;margin-top:6px;font-size:12.5px;color:var(--muted);}
+.study-total-bar b{color:var(--blue-deep);}
+.tasklist{display:flex;flex-direction:column;gap:6px;}
+.taskitem{display:flex;align-items:center;gap:8px;background:var(--card2);padding:9px 11px;border-radius:9px;}
+.taskitem input[type=text]{flex:1;background:transparent;border:none;color:var(--text);font-size:13px;}
+.taskitem input[type=text]:focus{outline:none;}
+.taskitem button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;}
+.addtask{display:flex;gap:8px;margin-top:8px;}
+.addtask input{flex:1;background:var(--card2);border:1px solid var(--line);border-radius:9px;padding:9px;color:var(--text);}
+.addtask button, .addsubj button{background:var(--blue);border:none;color:#fff;border-radius:9px;padding:9px 16px;cursor:pointer;font-size:13px;}
+.addsubj{display:flex;gap:8px;margin-top:4px;}
+.addsubj input{flex:1;background:var(--card2);border:1px solid var(--line);border-radius:9px;padding:9px;color:var(--text);}
+.chartbox{height:190px;margin-top:6px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:600px){.grid2{grid-template-columns:1fr;}}
+.kpis{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:6px 0 18px;}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 18px;text-align:center;min-width:92px;box-shadow:var(--shadow);}
+.kpi .val{font-size:18px;font-weight:800;color:var(--blue-deep);}
+.kpi .lbl{font-size:11px;color:var(--muted);}
+.footer-actions{display:flex;justify-content:center;gap:10px;margin-top:20px;flex-wrap:wrap;}
+.footer-actions button{background:var(--card);border:1px solid var(--line);color:var(--muted);padding:9px 15px;border-radius:9px;font-size:12px;cursor:pointer;box-shadow:var(--shadow);}
+.savepill{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);background:var(--blue);color:#fff;padding:7px 18px;border-radius:20px;font-size:12px;opacity:0;transition:opacity .3s;box-shadow:var(--shadow);}
+.savepill.show{opacity:1;}
+.hist-row{display:flex;justify-content:space-between;padding:9px 11px;border-bottom:1px solid var(--line);font-size:13px;}
+.hist-row:last-child{border-bottom:none;}
+.legend-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:11.5px;color:var(--muted);}
+.legend-row span{display:flex;align-items:center;gap:5px;}
+.legend-row i{width:9px;height:9px;border-radius:50%;display:inline-block;}
+
+/* ---- Study Calendar (heatmap) ---- */
+.cal-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.cal-nav button{background:#DBDAD5;border:none;color:#00192F;width:30px;height:30px;border-radius:8px;font-size:14px;cursor:pointer;}
+.cal-nav .cal-title{font-weight:800;font-size:14.5px;color:#00192F;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+.cal-dow{text-align:center;font-size:10.5px;color:var(--muted);font-weight:700;padding-bottom:2px;}
+.cal-cell{aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;position:relative;cursor:default;transition:transform .12s;}
+.cal-cell:hover{transform:scale(1.08);}
+.cal-cell.empty{background:transparent;}
+.cal-cell .cal-date{position:absolute;top:4px;right:6px;font-size:12px;font-weight:800;opacity:.85;}
+.cal-cell .cal-hrs{font-size:15px;font-weight:800;}
+.cal-cell .cal-badge{position:absolute;top:3px;left:5px;font-size:10px;}
+.cal-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;font-size:11px;color:var(--muted);align-items:center;}
+.cal-legend .swatch{display:flex;align-items:center;gap:5px;}
+.cal-legend .sw-box{width:13px;height:13px;border-radius:4px;display:inline-block;}
+.cal-status-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+.cal-status-pill{flex:1;min-width:140px;background:#DBDAD5;border-radius:10px;padding:9px 12px;font-size:11.5px;color:#00192F;font-weight:700;}
+.cal-status-pill b{display:block;font-size:16px;margin-bottom:1px;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎯 Rise — CA Prep Dashboard</h1>
+  <p>Study · Fitness · Reset · Growth</p>
+  <p id="syncStatus" style="font-size:11px;color:var(--muted);margin-top:6px;">⏳ connecting...</p>
+</header>
+
+<div class="datebar">
+  <button class="nav" onclick="shiftDate(-1)">←</button>
+  <input type="date" id="datePicker">
+  <button class="nav" onclick="shiftDate(1)">→</button>
+</div>
+<div class="streak" id="streakLine"></div>
+
+<div class="tabs">
+  <div class="tab active" data-page="today" onclick="switchTab('today')">Today</div>
+  <div class="tab" data-page="trends" onclick="switchTab('trends')">Trends</div>
+  <div class="tab" data-page="history" onclick="switchTab('history')">History</div>
+  <div class="tab" data-page="settings" onclick="switchTab('settings')">Settings</div>
+</div>
+
+<div class="wrap">
+
+  <!-- TODAY -->
+  <div class="page active" id="page-today">
+    <div class="rings"><canvas id="ringsCanvas" width="220" height="220"></canvas></div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--violet)"></span> Study — subject-wise</h3>
+      <div id="subjectFields"></div>
+      <div class="addsubj">
+        <input type="text" id="newSubject" placeholder="Add another subject..." onkeydown="if(event.key==='Enter')addSubjectFromToday()">
+        <button onclick="addSubjectFromToday()">Add</button>
+      </div>
+      <div class="study-total-bar">
+        <span>Total studied: <b id="totalStudiedLabel">0</b> / <b id="totalTargetLabel">8</b> hrs</span>
+      </div>
+      <div class="progress-mini"><div id="studyBar" style="width:0%;background:var(--violet)"></div></div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--teal)"></span> Fitness</h3>
+      <div class="checkline">
+        <input type="checkbox" id="gymDone">
+        <span>Gym session (Mon–Fri)</span>
+        <span class="sub" id="gymDaySub"></span>
+      </div>
+      <div class="row">
+        <div class="field"><label>Workout type</label>
+          <select id="workoutType">
+            <option>Strength</option><option>CrossFit</option><option>TABATA</option>
+            <option>Cardio</option><option>Sports/Play</option><option>Rest day</option>
+          </select>
+        </div>
+        <div class="field"><label>Calories burnt (watch)</label><input type="number" id="caloriesBurnt"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--marigold)"></span> Reset</h3>
+      <div class="row">
+        <div class="field"><label>Sleep (hrs)</label><input type="number" step="0.5" id="sleepHrs"></div>
+        <div class="field"><label>Screen time (hrs)</label><input type="number" step="0.5" id="screenTime"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Water (L)</label><input type="number" step="0.25" id="waterIntake"></div>
+        <div class="field"><label>Meditation (min)</label><input type="number" id="meditationMin"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--pink)"></span> Reading & Skincare</h3>
+      <div class="row">
+        <div class="field"><label>Reading — book title</label><input type="text" id="bookTitle" placeholder="What are you reading?"></div>
+        <div class="field"><label>Minutes read (target 30)</label><input type="number" id="readMin"></div>
+      </div>
+      <div class="checkline">
+        <input type="checkbox" id="skinAM">
+        <span>☀️ Morning skincare routine</span>
+      </div>
+      <div class="checkline">
+        <input type="checkbox" id="skinPM">
+        <span>🌙 Evening skincare routine</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>✅ Today's Tasks</h3>
+      <div class="tasklist" id="taskList"></div>
+      <div class="addtask">
+        <input type="text" id="newTask" placeholder="Add a task..." onkeydown="if(event.key==='Enter')addTask()">
+        <button onclick="addTask()">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRENDS -->
+  <div class="page" id="page-trends">
+    <div class="kpis" id="kpiRow"></div>
+
+    <div class="card" style="background:#00192F;">
+      <h3 style="color:#DBDAD5;"><span class="dot" style="background:#A26D5D"></span> Study Hours Calendar</h3>
+      <div class="cal-nav">
+        <button onclick="shiftCalMonth(-1)">←</button>
+        <span class="cal-title" id="calTitle" style="color:#DBDAD5;"></span>
+        <button onclick="shiftCalMonth(1)">→</button>
+      </div>
+      <div class="cal-grid" id="calDowRow"></div>
+      <div class="cal-grid" id="calGrid" style="margin-top:5px;"></div>
+      <div class="cal-legend">
+        <span class="swatch"><i class="sw-box" style="background:#f4f4f2;border:1px solid #ddd;"></i>No entry</span>
+        <span class="swatch"><i class="sw-box" style="background:#DBDAD5"></i>⚠️ Underperforming (&lt;8h)</span>
+        <span class="swatch"><i class="sw-box" style="background:#9AB5AE"></i>💪 Hardworking (8–10h)</span>
+        <span class="swatch"><i class="sw-box" style="background:#A26D5D"></i>😅 Chill pill (&gt;10h)</span>
+      </div>
+      <div class="cal-status-row" id="calStatusRow"></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card" style="grid-column:1/-1;">
+        <h3>Study Hours — subject-wise (14 days)</h3>
+        <div class="chartbox" style="height:220px;"><canvas id="chartStudySubjects"></canvas></div>
+        <div class="legend-row" id="studyLegend"></div>
+      </div>
+      <div class="card" style="grid-column:1/-1;">
+        <h3>Mock Test Scores — subject-wise (%)</h3>
+        <div class="chartbox" style="height:220px;"><canvas id="chartMockSubjects"></canvas></div>
+        <div class="legend-row" id="mockLegend"></div>
+      </div>
+      <div class="card"><h3>Sleep</h3><div class="chartbox"><canvas id="chartSleep"></canvas></div></div>
+      <div class="card"><h3>Screen Time</h3><div class="chartbox"><canvas id="chartScreen"></canvas></div></div>
+      <div class="card"><h3>Reading Minutes</h3><div class="chartbox"><canvas id="chartRead"></canvas></div></div>
+      <div class="card"><h3>Calories Burnt</h3><div class="chartbox"><canvas id="chartBurnt"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="page" id="page-history">
+    <div class="card"><h3>Recent Days</h3><div id="historyList"></div></div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="page" id="page-settings">
+    <div class="card">
+      <h3>Subjects</h3>
+      <div id="subjectManageList"></div>
+      <div class="addsubj">
+        <input type="text" id="newSubjectSettings" placeholder="Add a subject...">
+        <button onclick="addSubjectFromSettings()">Add</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Your Targets</h3>
+      <div class="row">
+        <div class="field"><label>Total study hours/day</label><input type="number" step="0.5" id="t_study"></div>
+        <div class="field"><label>Sleep hrs</label><input type="number" step="0.5" id="t_sleep"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Screen time ceiling (hrs)</label><input type="number" step="0.5" id="t_screen"></div>
+        <div class="field"><label>Reading minutes/day</label><input type="number" id="t_read"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Water target (L)</label><input type="number" step="0.25" id="t_water"></div>
+        <div class="field"><label>Calories burnt target</label><input type="number" id="t_burnt"></div>
+      </div>
+      <button onclick="saveTargets()" style="background:var(--blue);border:none;color:#fff;padding:9px 18px;border-radius:9px;cursor:pointer;">Save Targets</button>
+    </div>
+    <div class="card">
+      <h3>Backup</h3>
+      <div class="footer-actions">
+        <button onclick="exportCSV()">Export CSV</button>
+        <button onclick="exportJSON()">Export JSON</button>
+        <button onclick="document.getElementById('importFile').click()">Import JSON</button>
+        <input type="file" id="importFile" style="display:none" accept=".json" onchange="importJSON(event)">
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="savepill" id="savePill">Saved ✓</div>
+
+<script>
+/* ---------- Firebase Sync ---------- */
+// 1. Paste your Firebase config below (from Firebase Console > Project Settings > Your apps)
+const firebaseConfig = {
+  apiKey: "AIzaSyC_bVUrw4PWlR0msJBziHh81s_B5gdD0ZA",
+  authDomain: "rebuild-c80dd.firebaseapp.com",
+  projectId: "rebuild-c80dd",
+  storageBucket: "rebuild-c80dd.firebasestorage.app",
+  messagingSenderId: "280762731090",
+  appId: "1:280762731090:web:0a46841a772adeccafad8b"
+};
+// 2. This is a fixed document ID so every device reads/writes the same record — no login needed.
+const SYNC_DOC_ID = "brother-ca-dashboard";
+
+let db = null;
+let syncReady = false;
+let applyingRemote = false;
+let pendingPush = null;
+
+function setSyncStatus(text, color){
+  const el = document.getElementById('syncStatus');
+  if(el){ el.textContent = text; el.style.color = color || 'var(--muted)'; }
+}
+
+function initSync(){
+  try{
+    if(firebaseConfig.apiKey === "PASTE_API_KEY"){
+      setSyncStatus('🔌 Not connected — add Firebase config to enable sync', '#A26D5D');
+      return;
+    }
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
+    const ref = db.collection('rebuild').doc(SYNC_DOC_ID);
+
+    ref.onSnapshot(snap=>{
+      if(snap.exists){
+        const remote = snap.data();
+        if(remote && remote.payload){
+          applyingRemote = true;
+          store = JSON.parse(remote.payload);
+          store.targets = {...defaultTargets, ...store.targets};
+          if(!store.subjects || !store.subjects.length) store.subjects = [...defaultSubjects];
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+          loadDay();
+          applyingRemote = false;
+        }
+      } else {
+        pushToCloud();
+      }
+      syncReady = true;
+      setSyncStatus('☁️ Synced', '#4c6665');
+    }, err=>{
+      console.error(err);
+      setSyncStatus('⚠️ Sync error — check Firestore rules', '#A26D5D');
+    });
+  }catch(e){
+    console.error(e);
+    setSyncStatus('⚠️ Sync setup failed', '#A26D5D');
+  }
+}
+
+function pushToCloud(){
+  if(!db || applyingRemote) return;
+  clearTimeout(pendingPush);
+  pendingPush = setTimeout(()=>{
+    db.collection('rebuild').doc(SYNC_DOC_ID).set({
+      payload: JSON.stringify(store),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(()=> setSyncStatus('☁️ Synced', '#4c6665'))
+      .catch(err=>{ console.error(err); setSyncStatus('⚠️ Could not sync', '#A26D5D'); });
+  }, 500);
+}
+
+/* ---------- Store ---------- */
+const STORAGE_KEY = 'ca_dashboard_store_v2';
+const defaultTargets = { study:8, sleep:7.5, screen:3, read:30, water:2.5, burnt:400 };
+const defaultSubjects = ['Cost Accounting','Audit','FMSM'];
+const SUBJECT_COLORS = ['#00192F','#A26D5D','#4c6665','#9AB5AE','#6b8a83','#8a5344','#2f4550','#c99f8e'];
+
+let store = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null') || { days:{}, tasks:{}, targets: {...defaultTargets}, subjects:[...defaultSubjects] };
+store.targets = {...defaultTargets, ...store.targets};
+if(!store.subjects || !store.subjects.length) store.subjects = [...defaultSubjects];
+
+function subjColor(name){
+  const idx = store.subjects.indexOf(name);
+  return SUBJECT_COLORS[idx % SUBJECT_COLORS.length] || '#00192F';
+}
+
+function todayStr(){ const d=new Date(); return d.toISOString().slice(0,10); }
+let selectedDate = todayStr();
+let day = null;
+
+function saveStore(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+  const p = document.getElementById('savePill');
+  p.classList.add('show'); setTimeout(()=>p.classList.remove('show'),900);
+  pushToCloud();
+}
+
+function ensureDay(dateStr){
+  if(!store.days[dateStr]) store.days[dateStr] = {};
+  if(!store.tasks[dateStr]) store.tasks[dateStr] = [];
+  const d = store.days[dateStr];
+  if(!d.subjects) d.subjects = {}; // { subjectName: { hours, mockTaken, mockScore } }
+  return d;
+}
+
+/* ---------- Date nav ---------- */
+document.getElementById('datePicker').value = selectedDate;
+document.getElementById('datePicker').addEventListener('change', e=>{
+  selectedDate = e.target.value; loadDay();
+});
+function shiftDate(delta){
+  const d = new Date(selectedDate); d.setDate(d.getDate()+delta);
+  selectedDate = d.toISOString().slice(0,10);
+  document.getElementById('datePicker').value = selectedDate;
+  loadDay();
+}
+function dayOfWeekLabel(dateStr){
+  const d = new Date(dateStr);
+  const wd = d.getDay();
+  const isWeekday = wd>=1 && wd<=5;
+  return isWeekday ? 'Scheduled today' : 'Weekend — optional';
+}
+
+/* ---------- Subject fields (Today tab) ---------- */
+function renderSubjectFields(){
+  day = ensureDay(selectedDate);
+  const el = document.getElementById('subjectFields');
+  el.innerHTML = '';
+  store.subjects.forEach(subj=>{
+    const rec = day.subjects[subj] || { hours:'', mockTaken:false, mockScore:'' };
+    const row = document.createElement('div'); row.className = 'subject-row';
+    row.innerHTML = `
+      <div class="top">
+        <span class="subject-chip" style="background:${subjColor(subj)}"></span>
+        <span class="subj-name">${subj}</span>
+      </div>
+      <div class="subj-fields">
+        <div class="field"><label>Hours studied</label><input type="number" step="0.5" class="subj-hours" data-subj="${subj}" value="${rec.hours ?? ''}"></div>
+        <div class="field"><label>Mock score (%) — optional</label><input type="number" class="subj-mock" data-subj="${subj}" value="${rec.mockScore ?? ''}" placeholder="—" ${rec.mockTaken? '' : 'style="opacity:.55"'}></div>
+      </div>
+      <div class="mocktoggle">
+        <input type="checkbox" class="subj-mocktaken" data-subj="${subj}" ${rec.mockTaken? 'checked':''}>
+        <label>Took a mock test today for ${subj}</label>
+      </div>
+    `;
+    el.appendChild(row);
+  });
+  // bind
+  el.querySelectorAll('.subj-hours').forEach(inp=>{
+    inp.addEventListener('input', ()=>{ updateSubject(inp.dataset.subj, 'hours', +inp.value || 0); });
+  });
+  el.querySelectorAll('.subj-mock').forEach(inp=>{
+    inp.addEventListener('input', ()=>{ updateSubject(inp.dataset.subj, 'mockScore', inp.value===''? '' : +inp.value); });
+  });
+  el.querySelectorAll('.subj-mocktaken').forEach(cb=>{
+    cb.addEventListener('change', ()=>{ updateSubject(cb.dataset.subj, 'mockTaken', cb.checked); renderSubjectFields(); });
+  });
+}
+function updateSubject(subj, key, val){
+  day = ensureDay(selectedDate);
+  if(!day.subjects[subj]) day.subjects[subj] = { hours:0, mockTaken:false, mockScore:'' };
+  day.subjects[subj][key] = val;
+  saveStore(); renderRings(); updateStudyTotals();
+}
+function updateStudyTotals(){
+  day = ensureDay(selectedDate);
+  const total = store.subjects.reduce((sum,s)=> sum + (+(day.subjects[s]?.hours) || 0), 0);
+  document.getElementById('totalStudiedLabel').textContent = total.toFixed(1);
+  document.getElementById('totalTargetLabel').textContent = store.targets.study;
+  document.getElementById('studyBar').style.width = Math.min(100, Math.round(total/store.targets.study*100)) + '%';
+}
+function addSubjectFromToday(){
+  const inp = document.getElementById('newSubject');
+  const name = inp.value.trim();
+  if(!name) return;
+  if(!store.subjects.includes(name)) store.subjects.push(name);
+  inp.value=''; saveStore(); renderSubjectFields(); updateStudyTotals();
+}
+
+/* ---------- Settings: subject management ---------- */
+function renderSubjectManageList(){
+  const el = document.getElementById('subjectManageList');
+  el.innerHTML = '';
+  store.subjects.forEach((s,i)=>{
+    const row = document.createElement('div'); row.className='checkline';
+    row.innerHTML = `<span class="subject-chip" style="background:${subjColor(s)}"></span><span>${s}</span>`;
+    const del = document.createElement('button'); del.textContent='✕'; del.style.cssText='margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;';
+    del.onclick = ()=>{ if(store.subjects.length<=1){ alert('Keep at least one subject.'); return;} store.subjects.splice(i,1); saveStore(); renderSubjectManageList(); renderSubjectFields(); };
+    row.appendChild(del);
+    el.appendChild(row);
+  });
+}
+function addSubjectFromSettings(){
+  const inp = document.getElementById('newSubjectSettings');
+  const name = inp.value.trim();
+  if(!name) return;
+  if(!store.subjects.includes(name)) store.subjects.push(name);
+  inp.value=''; saveStore(); renderSubjectManageList(); renderSubjectFields();
+}
+
+/* ---------- Other field bindings ---------- */
+const fieldIds = ['gymDone','workoutType','caloriesBurnt','sleepHrs','screenTime','waterIntake','meditationMin',
+  'bookTitle','readMin','skinAM','skinPM'];
+
+function bindAutosave(){
+  fieldIds.forEach(id=>{
+    const el = document.getElementById(id);
+    const evt = (el.type==='checkbox' || el.tagName==='SELECT') ? 'change' : 'input';
+    el.addEventListener(evt, ()=>{ collectDay(); saveStore(); renderRings(); });
+  });
+}
+
+function collectDay(){
+  day = ensureDay(selectedDate);
+  day.gymDone = document.getElementById('gymDone').checked;
+  day.workoutType = document.getElementById('workoutType').value;
+  day.caloriesBurnt = +document.getElementById('caloriesBurnt').value || 0;
+  day.sleepHrs = +document.getElementById('sleepHrs').value || 0;
+  day.screenTime = +document.getElementById('screenTime').value || 0;
+  day.waterIntake = +document.getElementById('waterIntake').value || 0;
+  day.meditationMin = +document.getElementById('meditationMin').value || 0;
+  day.bookTitle = document.getElementById('bookTitle').value;
+  day.readMin = +document.getElementById('readMin').value || 0;
+  day.skinAM = document.getElementById('skinAM').checked;
+  day.skinPM = document.getElementById('skinPM').checked;
+}
+
+function loadDay(){
+  day = ensureDay(selectedDate);
+  document.getElementById('gymDone').checked = !!day.gymDone;
+  document.getElementById('workoutType').value = day.workoutType ?? 'Strength';
+  document.getElementById('caloriesBurnt').value = day.caloriesBurnt ?? '';
+  document.getElementById('sleepHrs').value = day.sleepHrs ?? '';
+  document.getElementById('screenTime').value = day.screenTime ?? '';
+  document.getElementById('waterIntake').value = day.waterIntake ?? '';
+  document.getElementById('meditationMin').value = day.meditationMin ?? '';
+  document.getElementById('bookTitle').value = day.bookTitle ?? '';
+  document.getElementById('readMin').value = day.readMin ?? '';
+  document.getElementById('skinAM').checked = !!day.skinAM;
+  document.getElementById('skinPM').checked = !!day.skinPM;
+  document.getElementById('gymDaySub').textContent = dayOfWeekLabel(selectedDate);
+  renderSubjectFields();
+  updateStudyTotals();
+  renderTasks();
+  renderRings();
+  computeStreak();
+}
+
+/* ---------- Tasks ---------- */
+function renderTasks(){
+  const list = store.tasks[selectedDate] || [];
+  const el = document.getElementById('taskList');
+  el.innerHTML = '';
+  list.forEach((t,i)=>{
+    const row = document.createElement('div'); row.className='taskitem';
+    const cb = document.createElement('input'); cb.type='checkbox'; cb.checked = t.done;
+    cb.onchange = ()=>{ t.done = cb.checked; saveStore(); };
+    const txt = document.createElement('input'); txt.type='text'; txt.value = t.text;
+    txt.style.textDecoration = t.done ? 'line-through' : 'none';
+    txt.onchange = ()=>{ t.text = txt.value; saveStore(); };
+    const del = document.createElement('button'); del.textContent='✕';
+    del.onclick = ()=>{ list.splice(i,1); saveStore(); renderTasks(); };
+    row.appendChild(cb); row.appendChild(txt); row.appendChild(del);
+    el.appendChild(row);
+  });
+}
+function addTask(){
+  const inp = document.getElementById('newTask');
+  if(!inp.value.trim()) return;
+  const list = store.tasks[selectedDate] || (store.tasks[selectedDate]=[]);
+  list.push({text: inp.value.trim(), done:false});
+  inp.value=''; saveStore(); renderTasks();
+}
+
+/* ---------- Rings ---------- */
+function pct(a,b){ if(!b) return 0; return Math.min(1, a/b); }
+function renderRings(){
+  collectDay();
+  const totalStudied = store.subjects.reduce((sum,s)=> sum + (+(day.subjects[s]?.hours) || 0), 0);
+  const studyPct = pct(totalStudied, store.targets.study);
+  const fitnessPct = day.gymDone ? 1 : 0;
+  const resetPct = (pct(day.sleepHrs, store.targets.sleep) + (day.screenTime && day.screenTime<=store.targets.screen ? 1:0) + pct(day.readMin, store.targets.read)) / 3;
+
+  const canvas = document.getElementById('ringsCanvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,220,220);
+  drawRing(ctx,110,110,95,10,studyPct,'#00192F');
+  drawRing(ctx,110,110,75,10,fitnessPct,'#4c6665');
+  drawRing(ctx,110,110,55,10,resetPct,'#A26D5D');
+  ctx.fillStyle='#00192F'; ctx.font='bold 15px sans-serif'; ctx.textAlign='center';
+  ctx.fillText(Math.round((studyPct+fitnessPct+resetPct)/3*100)+'%', 110, 116);
+  ctx.fillStyle='#5c6f78'; ctx.font='11px sans-serif';
+  ctx.fillText('overall', 110, 132);
+}
+function drawRing(ctx,cx,cy,r,w,fraction,color){
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.strokeStyle='#DBDAD5'; ctx.lineWidth=w; ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx,cy,r,-Math.PI/2, -Math.PI/2 + Math.PI*2*fraction); ctx.strokeStyle=color; ctx.lineWidth=w; ctx.lineCap='round'; ctx.stroke();
+}
+
+/* ---------- Streak ---------- */
+function computeStreak(){
+  let streak=0; let d = new Date(selectedDate);
+  while(true){
+    const ds = d.toISOString().slice(0,10);
+    const rec = store.days[ds];
+    if(rec && rec.subjects){
+      const total = store.subjects.reduce((sum,s)=> sum + (+(rec.subjects[s]?.hours) || 0), 0);
+      if(total >= store.targets.study*0.75){ streak++; d.setDate(d.getDate()-1); continue; }
+    }
+    break;
+  }
+  document.getElementById('streakLine').textContent = streak>0 ? `🔥 ${streak}-day study streak` : 'Start your streak today';
+}
+
+/* ---------- Tabs ---------- */
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.page===name));
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active', p.id==='page-'+name));
+  if(name==='trends') renderCharts();
+  if(name==='history') renderHistory();
+  if(name==='settings'){ loadTargets(); renderSubjectManageList(); }
+}
+
+/* ---------- Charts ---------- */
+let charts = {};
+function last14(){
+  const arr = [];
+  for(let i=13;i>=0;i--){
+    const d = new Date(selectedDate); d.setDate(d.getDate()-i);
+    arr.push(d.toISOString().slice(0,10));
+  }
+  return arr;
+}
+function mkChart(id, label, dataFn, target, color){
+  const ctx = document.getElementById(id).getContext('2d');
+  const dates = last14();
+  const data = dates.map(ds => { const r = store.days[ds]; return r ? (dataFn(r) ?? null) : null; });
+  if(charts[id]) charts[id].destroy();
+  charts[id] = new Chart(ctx, {
+    type:'line',
+    data:{ labels: dates.map(d=>d.slice(5)), datasets:[{ label, data, borderColor:color, backgroundColor:color+'33', tension:.3, spanGaps:true }]},
+    options:{
+      plugins:{ legend:{display:false},
+        annotation: target!=null ? { annotations:{ line1:{ type:'line', yMin:target, yMax:target, borderColor:'#9AB5AE', borderDash:[5,5], borderWidth:1 } } } : {}
+      },
+      scales:{ y:{ beginAtZero:true, ticks:{color:'#5c6f78'}, grid:{color:'#DBDAD5'} }, x:{ ticks:{color:'#5c6f78'}, grid:{display:false} } }
+    }
+  });
+}
+function mkMultiChart(id, subjectFn, target, legendElId){
+  const ctx = document.getElementById(id).getContext('2d');
+  const dates = last14();
+  const datasets = store.subjects.map(subj=>({
+    label: subj,
+    data: dates.map(ds=>{ const r = store.days[ds]; const v = r && r.subjects ? subjectFn(r.subjects[subj]) : null; return v===undefined? null : v; }),
+    borderColor: subjColor(subj),
+    backgroundColor: subjColor(subj)+'33',
+    tension:.3, spanGaps:true
+  }));
+  if(charts[id]) charts[id].destroy();
+  charts[id] = new Chart(ctx, {
+    type:'line',
+    data:{ labels: dates.map(d=>d.slice(5)), datasets },
+    options:{
+      plugins:{ legend:{display:false},
+        annotation: target!=null ? { annotations:{ line1:{ type:'line', yMin:target, yMax:target, borderColor:'#9AB5AE', borderDash:[5,5], borderWidth:1 } } } : {}
+      },
+      scales:{ y:{ beginAtZero:true, ticks:{color:'#5c6f78'}, grid:{color:'#DBDAD5'} }, x:{ ticks:{color:'#5c6f78'}, grid:{display:false} } }
+    }
+  });
+  if(legendElId){
+    document.getElementById(legendElId).innerHTML = store.subjects.map(s=>`<span><i style="background:${subjColor(s)}"></i>${s}</span>`).join('');
+  }
+}
+function renderCharts(){
+  mkMultiChart('chartStudySubjects', rec => rec ? (rec.hours || 0) : null, null, 'studyLegend');
+  mkMultiChart('chartMockSubjects', rec => (rec && rec.mockTaken && rec.mockScore!=='') ? rec.mockScore : null, null, 'mockLegend');
+  mkChart('chartSleep','Sleep', r=>r.sleepHrs, store.targets.sleep, '#A26D5D');
+  mkChart('chartScreen','Screen time', r=>r.screenTime, store.targets.screen, '#8a5344');
+  mkChart('chartRead','Reading min', r=>r.readMin, store.targets.read, '#4c6665');
+  mkChart('chartBurnt','Calories burnt', r=>r.caloriesBurnt, store.targets.burnt, '#00192F');
+  renderKPIs();
+  renderStudyCalendar();
+}
+
+/* ---------- Study Hours Calendar ---------- */
+let calMonthOffset = 0; // 0 = current month
+
+function dayTotalStudyHours(dateStr){
+  const r = store.days[dateStr];
+  if(!r || !r.subjects) return 0;
+  return store.subjects.reduce((sum,s)=> sum + (+(r.subjects[s]?.hours) || 0), 0);
+}
+
+function studyStatus(hours){
+  if(hours < 8) return { label:'Underperforming', emoji:'⚠️' };
+  if(hours <= 10) return { label:'Hardworking', emoji:'💪' };
+  return { label:'Take a chill pill', emoji:'😅' };
+}
+
+function shadeForHours(hours){
+  if(hours < 0) return { bg:'#f4f4f2', fg:'#b7b3ab' }; // no entry at all
+  if(hours < 8)  return { bg:'#DBDAD5', fg:'#00192F' };  // Underperforming
+  if(hours <= 10) return { bg:'#9AB5AE', fg:'#00192F' }; // Hardworking
+  return { bg:'#A26D5D', fg:'#ffffff' };                  // Take a chill pill
+}
+
+function shiftCalMonth(delta){
+  calMonthOffset += delta;
+  renderStudyCalendar();
+}
+
+function renderStudyCalendar(){
+  const gridEl = document.getElementById('calGrid');
+  const dowEl = document.getElementById('calDowRow');
+  const titleEl = document.getElementById('calTitle');
+  const statusEl = document.getElementById('calStatusRow');
+  if(!gridEl) return;
+
+  const base = new Date();
+  const viewDate = new Date(base.getFullYear(), base.getMonth() + calMonthOffset, 1);
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+
+  titleEl.textContent = viewDate.toLocaleDateString('en-IN',{ month:'long', year:'numeric' });
+
+  const dows = ['S','M','T','W','T','F','S'];
+  dowEl.innerHTML = dows.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+
+  const firstDayOfWeek = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const todayStrVal = todayStr();
+
+  let cells = '';
+  for(let i=0;i<firstDayOfWeek;i++){ cells += `<div class="cal-cell empty"></div>`; }
+
+  let underCount=0, hardCount=0, chillCount=0;
+
+  for(let d=1; d<=daysInMonth; d++){
+    const mm = String(month+1).padStart(2,'0');
+    const dd = String(d).padStart(2,'0');
+    const dateStr = `${year}-${mm}-${dd}`;
+    const hours = dayTotalStudyHours(dateStr);
+    const hasData = !!store.days[dateStr] && store.days[dateStr].subjects && Object.keys(store.days[dateStr].subjects).length>0;
+    const shade = shadeForHours(hasData ? hours : -1);
+    const status = studyStatus(hours);
+    if(hasData){
+      if(hours < 8) underCount++;
+      else if(hours <= 10) hardCount++;
+      else chillCount++;
+    }
+    const isToday = dateStr === todayStrVal;
+    const border = isToday ? 'border:2px solid #A26D5D;' : '';
+    cells += `<div class="cal-cell" style="background:${shade.bg};color:${shade.fg};${border}" title="${dateStr} — ${hasData ? hours.toFixed(1)+'h · '+status.label : 'No entry'}">
+      ${hasData ? `<span class="cal-badge">${status.emoji}</span>` : ''}
+      <span class="cal-date">${d}</span>
+      ${hasData ? `<span class="cal-hrs">${hours.toFixed(1)}h</span>` : ''}
+    </div>`;
+  }
+
+  gridEl.innerHTML = cells;
+
+  statusEl.innerHTML = `
+    <div class="cal-status-pill" style="background:#DBDAD5;color:#00192F;"><b>${underCount}</b>⚠️ Underperforming days (&lt;8h)</div>
+    <div class="cal-status-pill" style="background:#9AB5AE;color:#00192F;"><b>${hardCount}</b>💪 Hardworking days (8–10h)</div>
+    <div class="cal-status-pill" style="background:#A26D5D;color:#fff;"><b>${chillCount}</b>😅 Take-a-chill-pill days (&gt;10h)</div>
+  `;
+}
+function renderKPIs(){
+  const dates = last14();
+  const recs = dates.map(d=>store.days[d]).filter(Boolean);
+  const totalStudyFor = r => store.subjects.reduce((sum,s)=> sum + (+(r.subjects?.[s]?.hours) || 0), 0);
+  const avg = (fn)=>{ const vals = recs.map(fn).filter(v=>v!=null && !isNaN(v)); return vals.length? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1) : '—'; };
+  const gymDays = recs.filter(r=>r.gymDone).length;
+  document.getElementById('kpiRow').innerHTML = `
+    <div class="kpi"><div class="val">${avg(totalStudyFor)}</div><div class="lbl">avg study hrs</div></div>
+    <div class="kpi"><div class="val">${gymDays}</div><div class="lbl">gym days (14d)</div></div>
+    <div class="kpi"><div class="val">${avg(r=>r.sleepHrs)}</div><div class="lbl">avg sleep</div></div>
+    <div class="kpi"><div class="val">${avg(r=>r.readMin)}</div><div class="lbl">avg read min</div></div>
+  `;
+}
+
+/* ---------- History ---------- */
+function renderHistory(){
+  const el = document.getElementById('historyList');
+  const dates = Object.keys(store.days).sort().reverse().slice(0,30);
+  el.innerHTML = dates.map(ds=>{
+    const r = store.days[ds];
+    const total = store.subjects.reduce((sum,s)=> sum + (+(r.subjects?.[s]?.hours) || 0), 0);
+    return `<div class="hist-row"><span>${ds}</span><span>${total.toFixed(1)}h study · ${r.gymDone?'🏋️':'—'} · sleep ${r.sleepHrs||'—'}h</span></div>`;
+  }).join('') || '<div class="hist-row"><span>No entries yet</span></div>';
+}
+
+/* ---------- Settings: targets ---------- */
+function loadTargets(){
+  document.getElementById('t_study').value = store.targets.study;
+  document.getElementById('t_sleep').value = store.targets.sleep;
+  document.getElementById('t_screen').value = store.targets.screen;
+  document.getElementById('t_read').value = store.targets.read;
+  document.getElementById('t_water').value = store.targets.water;
+  document.getElementById('t_burnt').value = store.targets.burnt;
+}
+function saveTargets(){
+  store.targets.study = +document.getElementById('t_study').value || defaultTargets.study;
+  store.targets.sleep = +document.getElementById('t_sleep').value || defaultTargets.sleep;
+  store.targets.screen = +document.getElementById('t_screen').value || defaultTargets.screen;
+  store.targets.read = +document.getElementById('t_read').value || defaultTargets.read;
+  store.targets.water = +document.getElementById('t_water').value || defaultTargets.water;
+  store.targets.burnt = +document.getElementById('t_burnt').value || defaultTargets.burnt;
+  saveStore(); renderRings(); updateStudyTotals();
+  alert('Targets updated ✓');
+}
+
+/* ---------- Export / Import ---------- */
+function exportCSV(){
+  const dates = Object.keys(store.days).sort();
+  const header = ['date', ...store.subjects.flatMap(s=>[s+' hrs', s+' mock%']), 'gymDone','workoutType','caloriesBurnt','sleepHrs','screenTime','waterIntake','meditationMin','bookTitle','readMin','skinAM','skinPM'];
+  const rows = [header];
+  dates.forEach(ds=>{
+    const r = store.days[ds];
+    const subjVals = store.subjects.flatMap(s=>[r.subjects?.[s]?.hours ?? '', (r.subjects?.[s]?.mockTaken ? (r.subjects[s].mockScore ?? '') : '')]);
+    rows.push([ds, ...subjVals, r.gymDone,r.workoutType,r.caloriesBurnt,r.sleepHrs,r.screenTime,r.waterIntake,r.meditationMin,r.bookTitle,r.readMin,r.skinAM,r.skinPM]);
+  });
+  const csv = rows.map(r=>r.map(v=>`"${v??''}"`).join(',')).join('\n');
+  const blob = new Blob([csv],{type:'text/csv'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='ca-dashboard-'+todayStr()+'.csv'; a.click();
+}
+function exportJSON(){
+  const blob = new Blob([JSON.stringify(store,null,2)],{type:'application/json'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='ca-dashboard-backup-'+todayStr()+'.json'; a.click();
+}
+function importJSON(e){
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = evt=>{
+    try{
+      const parsed = JSON.parse(evt.target.result);
+      if(parsed.days){ store = {...store, ...parsed}; store.targets = {...defaultTargets, ...store.targets}; if(!store.subjects || !store.subjects.length) store.subjects=[...defaultSubjects]; saveStore(); loadDay(); alert('Backup imported ✓'); }
+    }catch(err){ alert('Could not read that file — make sure it is a backup exported from this dashboard.'); }
+  };
+  reader.readAsText(file);
+}
+
+/* ---------- Init ---------- */
+bindAutosave();
+loadDay();
+initSync();
+</script>
+</body>
+</html>
