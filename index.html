@@ -263,7 +263,7 @@ This typically indicates that your device does not have a healthy Internet conne
     </div>
     <div class="ring-legend">
       <div class="legend-row"><span class="dot" style="background:var(--coral)"></span>Diet<span class="pct" id="pctDiet">0%</span><span class="dc-inline" id="dcDiet" style="color:var(--coral)"></span></div>
-      <div class="legend-row"><span class="dot" style="background:var(--teal)"></span>Fitness &amp; Reset<span class="pct" id="pctFitness">0%</span><span class="dc-inline" id="dcFitness" style="color:var(--teal)"></span></div>
+      <div class="legend-row"><span class="dot" style="background:var(--teal)"></span>Fitness<span class="pct" id="pctFitness">0%</span><span class="dc-inline" id="dcFitness" style="color:var(--teal)"></span></div>
       <div class="legend-row"><span class="dot" style="background:var(--marigold)"></span>Productivity (avg)<span class="pct" id="pctProd">0%</span><span class="dc-inline" id="dcProd" style="color:var(--marigold)"></span></div>
       <div class="legend-row" style="border-top:1px dashed var(--line);padding-top:6px;margin-top:2px;"><span class="dot" style="background:var(--ink)"></span>Overall<span class="pct" id="dcOverallPct"></span></div>
     </div>
@@ -272,7 +272,8 @@ This typically indicates that your device does not have a healthy Internet conne
 
   <div class="tabs">
     <div class="tab active" data-tab="diet">Diet</div>
-    <div class="tab" data-tab="fitness">Fitness &amp; Reset</div>
+    <div class="tab" data-tab="fitness">Fitness</div>
+    <div class="tab" data-tab="reset">Reset</div>
     <div class="tab" data-tab="productivity">Productivity</div>
     <div class="tab" data-tab="month">Month</div>
     <div class="tab" data-tab="trends">Trends &amp; History</div>
@@ -332,8 +333,9 @@ This typically indicates that your device does not have a healthy Internet conne
         <div class="chip" data-val="Yoga/Mobility">Yoga/Mobility</div>
         <div class="chip" data-val="Rest">Rest day</div>
       </div>
-      <div class="field-grid" style="margin-top:16px;max-width:220px;">
-        <div class="field"><label>Calories burnt (total, from watch)</label><input type="number" id="in-caloriesBurnt" placeholder="0"></div>
+      <div class="field-grid" style="margin-top:16px;max-width:460px;">
+        <div class="field"><label>Calories burnt</label><input type="number" id="in-caloriesBurnt" placeholder="0"></div>
+        <div class="field"><label>Steps</label><input type="number" id="in-steps" placeholder="0"></div>
       </div>
     </div>
     <div class="card">
@@ -346,15 +348,47 @@ This typically indicates that your device does not have a healthy Internet conne
         <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;">Energy level</label>
         <div class="slider-row"><input type="range" id="in-energy" min="1" max="5" step="1" value="3"><span class="slider-val mono" id="energyVal">3</span></div>
       </div>
+      <button class="save-btn teal" onclick="saveFitness()" style="margin-top:16px;">Save this day's fitness</button>
+      <span class="save-msg" id="msg-fitness">Saved ✓</span>
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <h2>Sleep trend</h2>
+        <div class="chart-box"><canvas id="chartSleep"></canvas></div>
+      </div>
+      <div class="card">
+        <h2>Calories burnt trend</h2>
+        <div class="chart-box"><canvas id="chartBurnt"></canvas></div>
+      </div>
     </div>
     <div class="card">
-      <h2>Reset habits</h2>
+      <h2>Steps trend</h2>
+      <div class="chart-box"><canvas id="chartSteps"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>Workouts per week</h2>
+      <div class="chart-box"><canvas id="chartWorkout"></canvas></div>
+    </div>
+  </div>
+
+  <!-- RESET -->
+  <div class="panel" id="panel-reset">
+    <div class="sub" style="margin:-4px 0 14px;">This tab is just for you to see — nothing here feeds a score or ring. Log what happened, no pressure.</div>
+    <div class="card">
+      <h2>Phone curfew</h2>
       <div class="chip-row">
-        <div class="chip" id="chip-curfew" data-field="curfew">📵 Phone down by 10:30pm</div>
-        <div class="chip" id="chip-meditation" data-field="meditation">🧘 Meditation done</div>
+        <div class="chip" id="chip-curfew" data-field="curfew">📵 Phone down</div>
       </div>
-      <button class="save-btn teal" onclick="saveFitness()" style="margin-top:16px;">Save this day's fitness &amp; reset</button>
-      <span class="save-msg" id="msg-fitness">Saved ✓</span>
+      <button class="save-btn teal" onclick="saveReset()" style="margin-top:16px;">Save</button>
+      <span class="save-msg" id="msg-reset">Saved ✓</span>
+    </div>
+    <div class="card">
+      <h2>Meditation</h2>
+      <div class="chip-row">
+        <div class="chip" id="chip-meditation" data-field="meditation">🧘 Meditated</div>
+      </div>
+      <button class="save-btn teal" onclick="saveReset()" style="margin-top:16px;">Save</button>
+      <span class="save-msg" id="msg-reset2">Saved ✓</span>
     </div>
     <div class="card">
       <h2>Reading</h2>
@@ -374,20 +408,6 @@ This typically indicates that your device does not have a healthy Internet conne
       </div>
       <button class="save-btn teal" onclick="saveMeTime()" style="margin-top:10px;">Save me-time log</button>
       <span class="save-msg" id="msg-metime">Saved ✓</span>
-    </div>
-    <div class="two-col">
-      <div class="card">
-        <h2>Sleep trend</h2>
-        <div class="chart-box"><canvas id="chartSleep"></canvas></div>
-      </div>
-      <div class="card">
-        <h2>Calories burnt trend</h2>
-        <div class="chart-box"><canvas id="chartBurnt"></canvas></div>
-      </div>
-    </div>
-    <div class="card">
-      <h2>Workouts per week</h2>
-      <div class="chart-box"><canvas id="chartWorkout"></canvas></div>
     </div>
   </div>
 
@@ -454,7 +474,7 @@ This typically indicates that your device does not have a healthy Internet conne
       <div class="month-grid" id="monthGrid"></div>
       <div class="month-legend">
         <div class="item"><span class="dot" style="background:var(--coral)"></span> Diet</div>
-        <div class="item"><span class="dot" style="background:var(--teal)"></span> Fitness &amp; Reset</div>
+        <div class="item"><span class="dot" style="background:var(--teal)"></span> Fitness</div>
         <div class="item"><span class="dot" style="background:var(--marigold)"></span> Productivity</div>
         <div class="item"><span class="dot" style="background:var(--line)"></span> Not logged</div>
       </div>
@@ -489,6 +509,7 @@ This typically indicates that your device does not have a healthy Internet conne
         <div class="field"><label>Sleep — max (h)</label><input type="number" step="0.5" id="tgt-sleep-max"></div>
         <div class="field"><label>Screen time — ceiling (h)</label><input type="number" step="0.1" id="tgt-screenHours"></div>
         <div class="field"><label>Workouts/week</label><input type="number" id="tgt-workoutsPerWeek"></div>
+        <div class="field"><label>Steps target</label><input type="number" id="tgt-steps"></div>
       </div>
       <div class="sub" style="margin:10px 0;">A day "in range" (between min and max) scores 100% for that item. Going under the min or over the max scores less the further out you are — this replaces a single perfect number with a healthy zone.</div>
       <button class="save-btn marigold" onclick="saveTargets()">Save targets</button>
@@ -535,7 +556,7 @@ const DEFAULT_TARGETS = {
   fat: { min: 35, target: 45, max: 55 },
   water: 2.5, fiber: { min: 22, target: 28, max: 40 },
   sleep: { min: 6.5, target: 7.5, max: 8.5 },
-  screenHours: 2, workoutsPerWeek: 5, caloriesBurnt: 1750
+  screenHours: 2, workoutsPerWeek: 5, caloriesBurnt: 1750, steps: 6000
 };
 let TARGETS = JSON.parse(JSON.stringify(DEFAULT_TARGETS));
 function isRangeTarget(k){ return typeof DEFAULT_TARGETS[k] === 'object'; }
@@ -685,6 +706,7 @@ function switchDate(newDate){
   updateHeroLabel();
   refreshFormFields();
   renderAll();
+  syncTaskCounts();
 }
 function jumpToDate(d){ switchDate(d); }
 
@@ -780,7 +802,7 @@ function resetTargets(){
   flashMsg('msg-targets');
 }
 function refreshFormFields(){
-  ['calories','protein','carbs','fat','fiber','water','caloriesBurnt','screenHours'].forEach(f=>{
+  ['calories','protein','carbs','fat','fiber','water','caloriesBurnt','screenHours','steps'].forEach(f=>{
     const el = document.getElementById('in-'+f);
     el.value = day[f] !== undefined ? day[f] : '';
   });
@@ -839,7 +861,12 @@ function saveFitness(){
   day.energy = Number(document.getElementById('in-energy').value);
   const cb = document.getElementById('in-caloriesBurnt').value;
   day.caloriesBurnt = cb === '' ? undefined : Number(cb);
+  const st = document.getElementById('in-steps').value;
+  day.steps = st === '' ? undefined : Number(st);
   saveStore(); renderAll(); flashMsg('msg-fitness');
+}
+function saveReset(){
+  saveStore(); renderAll(); flashMsg('msg-reset'); flashMsg('msg-reset2');
 }
 function saveReading(){
   day.bookTitle = document.getElementById('in-bookTitle').value || undefined;
@@ -861,27 +888,32 @@ function saveProductivity(){
   saveStore(); renderAll(); flashMsg('msg-prod');
 }
 
+function currentTasks(){
+  if(!store.tasksByDate) store.tasksByDate = {};
+  if(!store.tasksByDate[selectedDate]) store.tasksByDate[selectedDate] = [];
+  return store.tasksByDate[selectedDate];
+}
 function addTask(group){
   const inputId = group==='study' ? 'newTaskTextStudy' : 'newTaskTextOther';
   const input = document.getElementById(inputId);
   const txt = input.value.trim();
   if(!txt) return;
-  store.tasks.push({id:Date.now(), text:txt, group, done:false});
+  currentTasks().push({id:Date.now(), text:txt, group, done:false});
   input.value='';
   saveStore(); renderTasks(); syncTaskCounts();
 }
 function toggleTask(id){
-  const t = store.tasks.find(x=>x.id===id);
+  const t = currentTasks().find(x=>x.id===id);
   t.done = !t.done;
   saveStore(); renderTasks(); syncTaskCounts();
 }
 function deleteTask(id){
-  store.tasks = store.tasks.filter(x=>x.id!==id);
+  store.tasksByDate[selectedDate] = currentTasks().filter(x=>x.id!==id);
   saveStore(); renderTasks(); syncTaskCounts();
 }
 function renderTaskGroup(group, elId){
   const el = document.getElementById(elId);
-  const list = store.tasks.filter(t=>t.group===group);
+  const list = currentTasks().filter(t=>t.group===group);
   if(list.length===0){ el.innerHTML = '<div class="hist-empty">No tasks yet — add your first one above.</div>'; return; }
   el.innerHTML = list.slice().reverse().map(t=>`
     <div class="task-item ${t.done?'done':''}">
@@ -895,8 +927,9 @@ function renderTasks(){
   renderTaskGroup('other', 'taskListOther');
 }
 function syncTaskCounts(){
-  const studyTasks = store.tasks.filter(t=>t.group==='study');
-  const otherTasks = store.tasks.filter(t=>t.group==='other');
+  const tasks = currentTasks();
+  const studyTasks = tasks.filter(t=>t.group==='study');
+  const otherTasks = tasks.filter(t=>t.group==='other');
   const plannedStudy = studyTasks.length;
   const completedStudy = studyTasks.filter(t=>t.done).length;
   const plannedOther = otherTasks.length;
@@ -905,13 +938,25 @@ function syncTaskCounts(){
   document.getElementById('completedStudyVal').textContent = completedStudy;
   document.getElementById('plannedOtherVal').textContent = plannedOther;
   document.getElementById('completedOtherVal').textContent = completedOther;
-  // Only the live "today" record auto-updates from the current task list — past days keep their historical snapshot.
-  if(selectedDate === realToday){
-    day.plannedStudy = plannedStudy; day.completedStudy = completedStudy;
-    day.plannedOther = plannedOther; day.completedOther = completedOther;
+  // Tasks are now scoped to the selected date, so this always saves against
+  // whichever day is currently open — past days are no longer skipped.
+  day.plannedStudy = plannedStudy; day.completedStudy = completedStudy;
+  day.plannedOther = plannedOther; day.completedOther = completedOther;
+  saveStore();
+  renderAll();
+}
+
+function migrateLegacyTasks(){
+  // Older data stored one global task list shared across every day.
+  // Move it onto today's date once, so history isn't lost.
+  if(Array.isArray(store.tasks) && store.tasks.length){
+    if(!store.tasksByDate) store.tasksByDate = {};
+    if(!store.tasksByDate[realToday]) store.tasksByDate[realToday] = [];
+    store.tasksByDate[realToday] = store.tasksByDate[realToday].concat(store.tasks);
+    delete store.tasks;
     saveStore();
   }
-  renderAll();
+  if(!store.tasksByDate) store.tasksByDate = {};
 }
 
 function rangeScore(val, range){
@@ -928,6 +973,11 @@ function atLeastScore(val, target){
   if(val === undefined || val === null || isNaN(val) || !target) return null;
   return Math.min(1, val/target);
 }
+function ceilingScore(val, target){
+  if(val === undefined || val === null || isNaN(val) || !target) return null;
+  if(val <= target) return 1;
+  return Math.max(0, 1 - (val - target)/target);
+}
 function dietScoreFor(d){
   if(!d || (d.calories===undefined && d.protein===undefined && d.fiber===undefined && d.carbs===undefined && d.fat===undefined)) return 0;
   const parts = [
@@ -936,17 +986,14 @@ function dietScoreFor(d){
     rangeScore(d.carbs, TARGETS.carbs),
     rangeScore(d.fat, TARGETS.fat),
     rangeScore(d.fiber, TARGETS.fiber)
-  ].filter(v=>v!==null);
-  return parts.length ? parts.reduce((a,b)=>a+b,0)/parts.length : 0;
+  ].map(v=>v===null?0:v);
+  return parts.reduce((a,b)=>a+b,0)/parts.length;
 }
 function fitnessScoreFor(d){
   if(!d) return 0;
-  let parts = 0, n = 0;
-  if(d.workout !== undefined){ parts += d.workout?1:0.3; n++; }
-  if(d.sleep !== undefined){ const s = rangeScore(d.sleep, TARGETS.sleep); parts += s===null?0:s; n++; }
-  if(d.curfew !== undefined){ parts += d.curfew?1:0; n++; }
-  if(d.meditation !== undefined){ parts += d.meditation?1:0; n++; }
-  return n? parts/n : 0;
+  const workoutScore = d.workout===undefined ? 0 : (d.workout?1:0.3);
+  const sleepScore = d.sleep===undefined ? 0 : (rangeScore(d.sleep, TARGETS.sleep) ?? 0);
+  return (workoutScore + sleepScore) / 2;
 }
 function categoryScore(planned, completed){
   if(!planned) return null;
@@ -954,16 +1001,20 @@ function categoryScore(planned, completed){
 }
 function prodScoreFor(d){
   if(!d) return 0;
+  // A category with no tasks created that day (planned=0) is left out of the average
+  // entirely — it's not scored as a failure, since there was nothing to do.
+  // Screen time is scored against its ceiling target: at/under target = full credit.
   const s1 = categoryScore(d.plannedStudy, d.completedStudy);
   const s2 = categoryScore(d.plannedOther, d.completedOther);
-  const vals = [s1,s2].filter(v=>v!==null);
-  return vals.length? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
+  const s3 = ceilingScore(d.screenHours, TARGETS.screenHours);
+  const parts = [s1, s2, s3].filter(v=>v!==null);
+  return parts.length ? parts.reduce((a,b)=>a+b,0)/parts.length : 0;
 }
 function dayCategoryScores(dd){
   if(!dd) return {d:null,f:null,p:null};
   const dLogged = dd.calories!==undefined || dd.protein!==undefined || dd.fiber!==undefined || dd.carbs!==undefined || dd.fat!==undefined || dd.water!==undefined;
-  const fLogged = dd.workout!==undefined || dd.sleep!==undefined || dd.curfew!==undefined || dd.meditation!==undefined;
-  const pLogged = !!dd.plannedStudy || !!dd.plannedOther;
+  const fLogged = dd.workout!==undefined || dd.sleep!==undefined;
+  const pLogged = !!dd.plannedStudy || !!dd.plannedOther || dd.screenHours!==undefined;
   return {
     d: dLogged ? dietScoreFor(dd) : null,
     f: fLogged ? fitnessScoreFor(dd) : null,
@@ -1018,8 +1069,9 @@ function computeMonthlyClassCounts(dateStr){
   Object.keys(store.days).filter(k=>k.startsWith(prefix)).forEach(k=>{
     const dd = store.days[k];
     const s = dayCategoryScores(dd);
+    const catKey = { diet:'d', fitness:'f', prod:'p' };
     ['diet','fitness','prod'].forEach(cat=>{
-      const val = s[cat==='diet'?'d':cat==='fitness'?'f':'p'];
+      const val = s[catKey[cat]];
       const label = classifyPct(val);
       if(label) buckets[cat][label]++;
     });
@@ -1044,7 +1096,7 @@ function renderClassCounts(){
   const b = computeMonthlyClassCounts(selectedDate);
   const detail = document.getElementById('classCountsDetail');
   if(detail){
-    const rows = [['Overall','overall'],['Diet','diet'],['Fitness & Reset','fitness'],['Productivity','prod']];
+    const rows = [['Overall','overall'],['Diet','diet'],['Fitness','fitness'],['Productivity','prod']];
     detail.innerHTML = rows.map(([label,key])=> buildClassCard(label, b[key])).join('');
   }
 }
@@ -1140,6 +1192,16 @@ function renderBurntChart(){
     options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{ticks:chartFont}, y:{min:0, suggestedMax:axisMaxFor(TARGETS.caloriesBurnt), ticks:chartFont}}}
   });
 }
+function renderStepsChart(){
+  const days = sortedDays(30);
+  destroyChart('steps');
+  charts.steps = new Chart(document.getElementById('chartSteps'), {
+    type:'line',
+    data:{ labels: days.map(d=>d.slice(5)),
+      datasets:[{label:'Steps', data: days.map(d=>store.days[d].steps ?? null), borderColor:'#B15FDB', backgroundColor:'#F1DFF9', fill:true, spanGaps:true, tension:.3}]},
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{ticks:chartFont}, y:{min:0, suggestedMax:axisMaxFor(TARGETS.steps), ticks:chartFont}}}
+  });
+}
 function renderWorkoutChart(){
   const weekMap = {};
   Object.keys(store.days).sort().forEach(dstr=>{
@@ -1211,8 +1273,11 @@ function renderKPIs(){
   const avgFiberM = avg(monthDays.map(d=>d.fiber));
   const avgSleepM = avg(monthDays.map(d=>d.sleep));
   const avgScreenM = avg(monthDays.map(d=>d.screenHours));
-  const doneT = store.tasks.filter(t=>t.done).length;
-  const pctTasks = store.tasks.length? Math.round(doneT/store.tasks.length*100) : 0;
+  const monthPrefix = now.toISOString().slice(0,7);
+  const monthTasks = Object.keys(store.tasksByDate||{}).filter(d=>d.slice(0,7)===monthPrefix)
+    .flatMap(d=>store.tasksByDate[d]);
+  const doneT = monthTasks.filter(t=>t.done).length;
+  const pctTasks = monthTasks.length? Math.round(doneT/monthTasks.length*100) : 0;
 
   document.getElementById('kpiMonth').innerHTML = kpiHtml([
     {v: avgCalM!==null? Math.round(avgCalM):'–', l:'Avg Calories'},
@@ -1287,7 +1352,7 @@ function renderMonth(){
   const avgD = avg(dScores), avgF = avg(fScores), avgP = avg(pScores);
   document.getElementById('monthSummary').innerHTML = kpiHtml([
     {v: dScores.length? Math.round(avgD*100)+'%':'–', l:'Avg Diet'},
-    {v: fScores.length? Math.round(avgF*100)+'%':'–', l:'Avg Fitness & Reset'},
+    {v: fScores.length? Math.round(avgF*100)+'%':'–', l:'Avg Fitness'},
     {v: pScores.length? Math.round(avgP*100)+'%':'–', l:'Avg Productivity'},
     {v: new Set([...Object.keys(store.days)].filter(d=>d.slice(0,7)===`${y}-${String(m+1).padStart(2,'0')}`)).size, l:'Days logged'},
   ]);
@@ -1340,7 +1405,7 @@ function exportExcel(){
     'Fiber','FiberMin','FiberTarget','FiberMax',
     'Water','WaterTarget',
     'Veggies','MenstrualPhase',
-    'Workout','WorkoutType','CaloriesBurnt','CaloriesBurntTarget',
+    'Workout','WorkoutType','CaloriesBurnt','CaloriesBurntTarget','Steps','StepsTarget',
     'Sleep','SleepMin','SleepTarget','SleepMax',
     'ScreenCurfew','Meditation','Energy',
     'PlannedStudy','CompletedStudy','StudyCompletionPct',
@@ -1367,7 +1432,7 @@ function exportExcel(){
       x.fiber??'', TARGETS.fiber.min, TARGETS.fiber.target, TARGETS.fiber.max,
       x.water??'', TARGETS.water,
       x.veggies?1:0, x.menstrualPhase??'',
-      x.workout?1:0, x.workoutType??'', x.caloriesBurnt??'', TARGETS.caloriesBurnt,
+      x.workout?1:0, x.workoutType??'', x.caloriesBurnt??'', TARGETS.caloriesBurnt, x.steps??'', TARGETS.steps,
       x.sleep??'', TARGETS.sleep.min, TARGETS.sleep.target, TARGETS.sleep.max,
       x.curfew?1:0, x.meditation?1:0, x.energy??'',
       x.plannedStudy??0, x.completedStudy??0, x.plannedStudy?Math.round((x.completedStudy||0)/x.plannedStudy*100):'',
@@ -1385,7 +1450,7 @@ function exportExcel(){
   months.forEach(mo=>{
     const anyDayInMonth = Object.keys(store.days).find(k=>k.startsWith(mo));
     const b = computeMonthlyClassCounts(anyDayInMonth);
-    [['Overall','overall'],['Diet','diet'],['Fitness & Reset','fitness'],['Productivity','prod']].forEach(([label,key])=>{
+    [['Overall','overall'],['Diet','diet'],['Fitness','fitness'],['Productivity','prod']].forEach(([label,key])=>{
       const c = b[key];
       const total = c.Excelling+c.Hardworking+c.Surviving+c.Underperforming;
       summaryRows.push([mo, label, c.Excelling, c.Hardworking, c.Surviving, c.Underperforming, total]);
@@ -1478,7 +1543,7 @@ async function initApp(){
   const local = loadLocalCache();
   if(local) store = local;
   if(!store.days) store.days = {};
-  if(!store.tasks) store.tasks = [];
+  migrateLegacyTasks();
   syncTargetsFromStore();
   if(!store.days[selectedDate]) store.days[selectedDate] = {};
   day = store.days[selectedDate];
@@ -1490,7 +1555,7 @@ async function initApp(){
   refreshFormFields();
   refreshTargetFields();
   renderAll();
-  if(selectedDate === realToday) syncTaskCounts();
+  syncTaskCounts();
 
   if(firebaseReady && docRef){
     try{
@@ -1499,6 +1564,7 @@ async function initApp(){
         const remoteStore = JSON.parse(snap.data().json);
         if((remoteStore.updatedAt||0) > (store.updatedAt||0)){
           store = remoteStore;
+          migrateLegacyTasks();
           syncTargetsFromStore();
           if(!store.days[selectedDate]) store.days[selectedDate] = {};
           day = store.days[selectedDate];
@@ -1506,7 +1572,7 @@ async function initApp(){
           refreshFormFields();
           refreshTargetFields();
           renderAll();
-          if(selectedDate === realToday) syncTaskCounts();
+          syncTaskCounts();
         }
       }
       setSyncStatus(navigator.onLine ? 'synced' : 'offline');
