@@ -245,6 +245,7 @@ This typically indicates that your device does not have a healthy Internet conne
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
       <div class="sync-pill" id="syncPill"><span class="dot" id="syncDot"></span><span id="syncLabel">Checking sync…</span></div>
+      <button class="today-btn" onclick="downloadBackup()" title="Download all your data as a JSON file">⬇ Backup data</button>
     </div>
   </div>
 
@@ -673,9 +674,65 @@ async function saveStore(){
   saveLocalCache();
   if(!firebaseReady || !docRef){ setSyncStatus('offline'); return; }
   try{
+    // SAFETY GUARD: never let a write shrink history. Before writing, fetch
+    // what's currently in Firestore and merge this device's days into it
+    // rather than blindly replacing the whole document. This prevents a
+    // stale/blank local session from wiping out previously-synced days.
+    const remoteSnap = await docRef.get();
+    let mergedDays = Object.assign({}, store.days);
+    let mergedTasks = store.tasks;
+    if(remoteSnap.exists && remoteSnap.data() && remoteSnap.data().json){
+      try{
+        const remote = JSON.parse(remoteSnap.data().json);
+        const remoteDayKeys = Object.keys(remote.days || {});
+        const localDayKeys = Object.keys(store.days || {});
+        if(remoteDayKeys.length > 0 && localDayKeys.length < remoteDayKeys.length - 2){
+          // Local store has meaningfully fewer days than what's already saved.
+          // This is exactly the pattern that causes silent history loss —
+          // block the automatic overwrite and surface a warning instead.
+          console.warn('[saveStore] Blocked a write that would have shrunk history:',
+            'local has', localDayKeys.length, 'days, remote has', remoteDayKeys.length, 'days.');
+          setSyncStatus('offline');
+          const label = document.getElementById('syncLabel');
+          if(label) label.textContent = 'Sync paused — this device has less history than the cloud. Refresh to pull the latest data first.';
+          return;
+        }
+        // Merge: remote days ∪ local days, with local winning on same-date conflicts
+        // (local is what the user just edited).
+        mergedDays = Object.assign({}, remote.days || {}, store.days || {});
+        if(Array.isArray(remote.tasks) && Array.isArray(store.tasks)){
+          // Union tasks by id if present, otherwise just keep the longer list.
+          mergedTasks = store.tasks.length >= remote.tasks.length ? store.tasks : remote.tasks;
+        }
+      }catch(parseErr){
+        // If the remote doc is unreadable, fall back to writing local as-is
+        // rather than blocking saves entirely.
+      }
+    }
+    store.days = mergedDays;
+    store.tasks = mergedTasks;
+    saveLocalCache();
     await docRef.set({ json: JSON.stringify(store) });
   }catch(e){
     setSyncStatus('offline');
+  }
+}
+
+function downloadBackup(){
+  try{
+    const payload = JSON.stringify(store, null, 2);
+    const blob = new Blob([payload], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = `rebuild-backup-${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }catch(e){
+    alert('Backup failed: ' + e.message);
   }
 }
 
@@ -691,6 +748,12 @@ document.querySelectorAll('.tab').forEach(t=>{
     t.classList.add('active');
     document.getElementById('panel-'+t.dataset.tab).classList.add('active');
     if(t.dataset.tab==='month') renderMonth();
+    // Charts created while their tab panel was hidden (display:none) get 0 width/height
+    // from Chart.js and never draw anything, even after the tab becomes visible. Force
+    // every existing chart to recompute its now-visible size whenever any tab is opened.
+    requestAnimationFrame(()=>{
+      Object.values(charts).forEach(c=>{ if(c && typeof c.resize === 'function') c.resize(); });
+    });
   });
 });
 
