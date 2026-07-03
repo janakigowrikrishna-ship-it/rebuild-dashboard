@@ -257,11 +257,11 @@
       <div class="field-row">
         <div class="field">
           <label>EMI Amount (₹ / month)</label>
-          <input type="number" id="fEmi" placeholder="0" oninput="updateCalcPreview()">
+          <input type="number" step="any" id="fEmi" placeholder="0" oninput="updateCalcPreview()">
         </div>
         <div class="field">
           <label>Number of EMIs Remaining</label>
-          <input type="number" id="fMonths" placeholder="0" oninput="updateCalcPreview()">
+          <input type="number" step="any" id="fMonths" placeholder="0" oninput="updateCalcPreview()">
         </div>
       </div>
       <div class="field">
@@ -275,7 +275,7 @@
     <div id="friendFields">
       <div class="field">
         <label>Total Amount (₹)</label>
-        <input type="number" id="fPending" placeholder="0">
+        <input type="number" step="any" id="fPending" placeholder="0">
       </div>
       <div class="field">
         <label>Expected Return Date</label>
@@ -313,10 +313,63 @@ const FIREBASE_CONFIG = {
 };
 
 const DOC_PATH = { collection: "rebuild", doc: "brother-money-dashboard" };
+const MONEY_STORAGE_KEY = 'money_dashboard_cache_v1';
 
 let db, docRef;
 let state = { bank: [], borrowed: [], lent: [] };
 let saveTimer = null;
+let applyingRemoteMoney = false;
+
+// Load whatever was last saved locally before Firestore responds, so the
+// screen is never blank while waiting on the network — and so there's a
+// local copy that survives even if a Firestore write fails.
+try{
+  const cached = JSON.parse(localStorage.getItem(MONEY_STORAGE_KEY) || 'null');
+  if(cached && (cached.bank || cached.borrowed || cached.lent)){
+    state = { bank: cached.bank||[], borrowed: cached.borrowed||[], lent: cached.lent||[], updatedAt: cached.updatedAt||0 };
+  }
+}catch(e){}
+
+function saveMoneyLocalCache(){
+  try{ localStorage.setItem(MONEY_STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+}
+
+function downloadMoneyBackup(){
+  try{
+    const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0,10);
+    a.href = URL.createObjectURL(blob);
+    a.download = `money-dashboard-backup-${stamp}.json`;
+    a.click();
+  }catch(e){
+    alert('Backup failed: ' + e.message);
+  }
+}
+
+function importMoneyBackup(evt){
+  const file = evt.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try{
+      const parsed = JSON.parse(reader.result);
+      if(!('bank' in parsed) && !('borrowed' in parsed) && !('lent' in parsed)){
+        alert('That file doesn\'t look like a Money Dashboard backup.');
+        return;
+      }
+      state = { bank: parsed.bank||[], borrowed: parsed.borrowed||[], lent: parsed.lent||[] };
+      saveMoneyLocalCache();
+      render();
+      queueSave();
+      alert('Backup imported ✓');
+    }catch(err){
+      alert('Could not read that file — make sure it is a backup exported from this dashboard.');
+    }
+  };
+  reader.readAsText(file);
+  evt.target.value = '';
+}
 
 function setStatus(text, cls){
   const el = document.getElementById('syncStatus');
@@ -336,11 +389,25 @@ function initFirebase(){
 
     docRef.onSnapshot((snap)=>{
       clearTimeout(timeout);
+      // Skip our own optimistic echo of a write we just made — applying it
+      // again here could clobber an edit made in the moment before this
+      // write reached the server.
+      if(snap.metadata.hasPendingWrites){
+        setStatus('Saving…', '');
+        return;
+      }
       if(snap.exists){
         const data = snap.data();
-        state.bank = data.bank || [];
-        state.borrowed = data.borrowed || [];
-        state.lent = data.lent || [];
+        // Only replace local state if the remote copy is actually newer.
+        if((data.updatedAt||0) >= (state.updatedAt||0)){
+          applyingRemoteMoney = true;
+          state.bank = data.bank || [];
+          state.borrowed = data.borrowed || [];
+          state.lent = data.lent || [];
+          state.updatedAt = data.updatedAt || Date.now();
+          saveMoneyLocalCache();
+          applyingRemoteMoney = false;
+        }
       }
       render();
       setStatus('Synced ✓', 'ok');
@@ -355,17 +422,59 @@ function initFirebase(){
   }
 }
 
+function mergeEntriesById(remoteArr, localArr){
+  const map = new Map();
+  (remoteArr||[]).forEach(item=> item && item.id && map.set(item.id, item));
+  (localArr||[]).forEach(item=> item && item.id && map.set(item.id, item)); // local wins on same id
+  return Array.from(map.values());
+}
+
+let saveInFlight = false;
+let saveQueued = false;
 function queueSave(){
+  if(applyingRemoteMoney) return;
+  state.updatedAt = Date.now();
+  saveMoneyLocalCache();
   setStatus('Saving…', '');
   if(saveTimer) clearTimeout(saveTimer);
-  saveTimer = setTimeout(()=>{
+  saveTimer = setTimeout(async ()=>{
     if(!docRef) return;
-    docRef.set(state).then(()=>{
+    if(saveInFlight){ saveQueued = true; return; }
+    saveInFlight = true;
+    try{
+      const remoteSnap = await docRef.get();
+      let payload = { bank: state.bank, borrowed: state.borrowed, lent: state.lent, updatedAt: state.updatedAt };
+      if(remoteSnap.exists){
+        const remote = remoteSnap.data() || {};
+        const remoteCount = (remote.bank||[]).length + (remote.borrowed||[]).length + (remote.lent||[]).length;
+        const localCount = (state.bank||[]).length + (state.borrowed||[]).length + (state.lent||[]).length;
+        // Only merge (recovery mode) when this device looks meaningfully
+        // behind the cloud — normal saves skip merging so deletions apply
+        // cleanly. Merging on every save could resurrect an item deleted
+        // moments earlier if the cloud hadn't caught up to that deletion yet.
+        if(remoteCount > localCount + 1){
+          console.warn('[queueSave] This device had fewer entries ('+localCount+') than the cloud ('+remoteCount+'). Merging safely.');
+          const mergedBank = mergeEntriesById(remote.bank, state.bank);
+          const mergedBorrowed = mergeEntriesById(remote.borrowed, state.borrowed);
+          const mergedLent = mergeEntriesById(remote.lent, state.lent);
+          state.bank = mergedBank;
+          state.borrowed = mergedBorrowed;
+          state.lent = mergedLent;
+          state.updatedAt = Date.now();
+          saveMoneyLocalCache();
+          render();
+          payload = { bank: mergedBank, borrowed: mergedBorrowed, lent: mergedLent, updatedAt: state.updatedAt };
+        }
+      }
+      await docRef.set(payload);
       setStatus('Synced ✓', 'ok');
-    }).catch((e)=>{
+    }catch(e){
       console.error(e);
       setStatus('Save failed — check connection.', 'err');
-    });
+    }finally{
+      saveInFlight = false;
+      if(saveQueued){ saveQueued = false; queueSave(); }
+    }
   }, 400);
 }
 
@@ -808,5 +917,13 @@ function undoLastPayment(){
 initFirebase();
 render();
 </script>
+<footer style="max-width:900px;margin:40px auto;padding:16px;text-align:center;">
+  <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Data backup</div>
+  <div style="display:flex;gap:8px;justify-content:center;">
+    <button onclick="downloadMoneyBackup()" style="font-size:11px;padding:5px 10px;cursor:pointer;">⬇ Backup data</button>
+    <button onclick="document.getElementById('moneyImportFile').click()" style="font-size:11px;padding:5px 10px;cursor:pointer;">Import backup</button>
+    <input type="file" id="moneyImportFile" style="display:none" accept=".json" onchange="importMoneyBackup(event)">
+  </div>
+</footer>
 </body>
 </html>

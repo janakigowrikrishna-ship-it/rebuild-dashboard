@@ -286,11 +286,11 @@ This typically indicates that your device does not have a healthy Internet conne
     <div class="card">
       <h2>Today's macros</h2>
       <div class="field-grid">
-        <div class="field"><label>Calories</label><input type="number" id="in-calories" placeholder="0"></div>
-        <div class="field"><label>Protein (g)</label><input type="number" id="in-protein" placeholder="0"></div>
-        <div class="field"><label>Carbs (g)</label><input type="number" id="in-carbs" placeholder="0"></div>
-        <div class="field"><label>Fat (g)</label><input type="number" id="in-fat" placeholder="0"></div>
-        <div class="field"><label>Fiber (g)</label><input type="number" id="in-fiber" placeholder="0"></div>
+        <div class="field"><label>Calories</label><input type="number" step="any" id="in-calories" placeholder="0"></div>
+        <div class="field"><label>Protein (g)</label><input type="number" step="any" id="in-protein" placeholder="0"></div>
+        <div class="field"><label>Carbs (g)</label><input type="number" step="any" id="in-carbs" placeholder="0"></div>
+        <div class="field"><label>Fat (g)</label><input type="number" step="any" id="in-fat" placeholder="0"></div>
+        <div class="field"><label>Fiber (g)</label><input type="number" step="any" id="in-fiber" placeholder="0"></div>
         <div class="field"><label>Water (L)</label><input type="number" step="0.1" id="in-water" placeholder="0"></div>
       </div>
       <div class="chip-row">
@@ -336,7 +336,7 @@ This typically indicates that your device does not have a healthy Internet conne
         <div class="chip" data-val="Rest">Rest day</div>
       </div>
       <div class="field-grid" style="margin-top:16px;max-width:460px;">
-        <div class="field"><label>Calories burnt</label><input type="number" id="in-caloriesBurnt" placeholder="0"></div>
+        <div class="field"><label>Calories burnt</label><input type="number" step="any" id="in-caloriesBurnt" placeholder="0"></div>
         <div class="field"><label>Steps</label><input type="number" id="in-steps" placeholder="0"></div>
       </div>
     </div>
@@ -396,8 +396,8 @@ This typically indicates that your device does not have a healthy Internet conne
       <h2>Reading</h2>
       <div class="field-grid">
         <div class="field"><label>Book title</label><input type="text" id="in-bookTitle" placeholder="What are you reading?"></div>
-        <div class="field"><label>Pages read</label><input type="number" id="in-bookPages" placeholder="0"></div>
-        <div class="field"><label>Minutes read</label><input type="number" id="in-bookMinutes" placeholder="0"></div>
+        <div class="field"><label>Pages read</label><input type="number" step="any" id="in-bookPages" placeholder="0"></div>
+        <div class="field"><label>Minutes read</label><input type="number" step="any" id="in-bookMinutes" placeholder="0"></div>
       </div>
       <button class="save-btn teal" onclick="saveReading()" style="margin-top:10px;">Save reading log</button>
       <span class="save-msg" id="msg-reading">Saved ✓</span>
@@ -406,7 +406,7 @@ This typically indicates that your device does not have a healthy Internet conne
       <h2>Me time</h2>
       <div class="field-grid">
         <div class="field"><label>Activity</label><input type="text" id="in-meActivity" placeholder="Painting, boxing, cooking…"></div>
-        <div class="field"><label>Minutes</label><input type="number" id="in-meMinutes" placeholder="0"></div>
+        <div class="field"><label>Minutes</label><input type="number" step="any" id="in-meMinutes" placeholder="0"></div>
       </div>
       <button class="save-btn teal" onclick="saveMeTime()" style="margin-top:10px;">Save me-time log</button>
       <span class="save-msg" id="msg-metime">Saved ✓</span>
@@ -491,21 +491,21 @@ This typically indicates that your device does not have a healthy Internet conne
       <h2>Your targets</h2>
       <div class="sub">This is the one place to set or change every target — the input pages stay clean and just track what you log.</div>
       <div class="field-grid">
-        <div class="field"><label>Calories — min (kcal)</label><input type="number" id="tgt-calories-min"></div>
-        <div class="field"><label>Calories — target</label><input type="number" id="tgt-calories-target"></div>
-        <div class="field"><label>Calories — max</label><input type="number" id="tgt-calories-max"></div>
-        <div class="field"><label>Protein — at least (g)</label><input type="number" id="tgt-protein"></div>
-        <div class="field"><label>Carbs — min (g)</label><input type="number" id="tgt-carbs-min"></div>
-        <div class="field"><label>Carbs — target</label><input type="number" id="tgt-carbs-target"></div>
-        <div class="field"><label>Carbs — max</label><input type="number" id="tgt-carbs-max"></div>
-        <div class="field"><label>Fat — min (g)</label><input type="number" id="tgt-fat-min"></div>
-        <div class="field"><label>Fat — target</label><input type="number" id="tgt-fat-target"></div>
-        <div class="field"><label>Fat — max</label><input type="number" id="tgt-fat-max"></div>
-        <div class="field"><label>Fiber — min (g)</label><input type="number" id="tgt-fiber-min"></div>
-        <div class="field"><label>Fiber — target</label><input type="number" id="tgt-fiber-target"></div>
-        <div class="field"><label>Fiber — max (g)</label><input type="number" id="tgt-fiber-max"></div>
+        <div class="field"><label>Calories — min (kcal)</label><input type="number" step="any" id="tgt-calories-min"></div>
+        <div class="field"><label>Calories — target</label><input type="number" step="any" id="tgt-calories-target"></div>
+        <div class="field"><label>Calories — max</label><input type="number" step="any" id="tgt-calories-max"></div>
+        <div class="field"><label>Protein — at least (g)</label><input type="number" step="any" id="tgt-protein"></div>
+        <div class="field"><label>Carbs — min (g)</label><input type="number" step="any" id="tgt-carbs-min"></div>
+        <div class="field"><label>Carbs — target</label><input type="number" step="any" id="tgt-carbs-target"></div>
+        <div class="field"><label>Carbs — max</label><input type="number" step="any" id="tgt-carbs-max"></div>
+        <div class="field"><label>Fat — min (g)</label><input type="number" step="any" id="tgt-fat-min"></div>
+        <div class="field"><label>Fat — target</label><input type="number" step="any" id="tgt-fat-target"></div>
+        <div class="field"><label>Fat — max</label><input type="number" step="any" id="tgt-fat-max"></div>
+        <div class="field"><label>Fiber — min (g)</label><input type="number" step="any" id="tgt-fiber-min"></div>
+        <div class="field"><label>Fiber — target</label><input type="number" step="any" id="tgt-fiber-target"></div>
+        <div class="field"><label>Fiber — max (g)</label><input type="number" step="any" id="tgt-fiber-max"></div>
         <div class="field"><label>Water (L)</label><input type="number" step="0.1" id="tgt-water"></div>
-        <div class="field"><label>Calories burnt</label><input type="number" id="tgt-caloriesBurnt"></div>
+        <div class="field"><label>Calories burnt</label><input type="number" step="any" id="tgt-caloriesBurnt"></div>
         <div class="field"><label>Sleep — min (h)</label><input type="number" step="0.5" id="tgt-sleep-min"></div>
         <div class="field"><label>Sleep — target</label><input type="number" step="0.5" id="tgt-sleep-target"></div>
         <div class="field"><label>Sleep — max (h)</label><input type="number" step="0.5" id="tgt-sleep-max"></div>
@@ -668,53 +668,54 @@ function startRemoteListener(){
     }catch(e){}
   }, err=>{ setSyncStatus('offline'); });
 }
+let saveInFlight = false;
+let saveQueued = false;
 async function saveStore(){
   if(applyingRemoteUpdate) return;
   store.updatedAt = Date.now();
   saveLocalCache();
   if(!firebaseReady || !docRef){ setSyncStatus('offline'); return; }
+  if(saveInFlight){ saveQueued = true; return; }
+  saveInFlight = true;
   try{
-    // SAFETY GUARD: never let a write shrink history. Before writing, fetch
-    // what's currently in Firestore and merge this device's days into it
-    // rather than blindly replacing the whole document. This prevents a
-    // stale/blank local session from wiping out previously-synced days.
+    // Always merge with whatever's already in Firestore before writing — this
+    // guarantees a write can never shrink history, even if this device's
+    // local copy is behind. No blocking: a blocked save would strand fresh
+    // edits locally with no path to the cloud, which defeats the point.
     const remoteSnap = await docRef.get();
     let mergedDays = Object.assign({}, store.days);
     let mergedTasks = store.tasks;
+    let recoveredHistory = false;
     if(remoteSnap.exists && remoteSnap.data() && remoteSnap.data().json){
       try{
         const remote = JSON.parse(remoteSnap.data().json);
         const remoteDayKeys = Object.keys(remote.days || {});
         const localDayKeys = Object.keys(store.days || {});
-        if(remoteDayKeys.length > 0 && localDayKeys.length < remoteDayKeys.length - 2){
-          // Local store has meaningfully fewer days than what's already saved.
-          // This is exactly the pattern that causes silent history loss —
-          // block the automatic overwrite and surface a warning instead.
-          console.warn('[saveStore] Blocked a write that would have shrunk history:',
-            'local has', localDayKeys.length, 'days, remote has', remoteDayKeys.length, 'days.');
-          setSyncStatus('offline');
-          const label = document.getElementById('syncLabel');
-          if(label) label.textContent = 'Sync paused — this device has less history than the cloud. Refresh to pull the latest data first.';
-          return;
+        if(remoteDayKeys.length > localDayKeys.length + 2){
+          recoveredHistory = true;
+          console.warn('[saveStore] This device had fewer days ('+localDayKeys.length+') than the cloud ('+remoteDayKeys.length+'). Merging safely.');
         }
-        // Merge: remote days ∪ local days, with local winning on same-date conflicts
-        // (local is what the user just edited).
         mergedDays = Object.assign({}, remote.days || {}, store.days || {});
         if(Array.isArray(remote.tasks) && Array.isArray(store.tasks)){
-          // Union tasks by id if present, otherwise just keep the longer list.
           mergedTasks = store.tasks.length >= remote.tasks.length ? store.tasks : remote.tasks;
         }
-      }catch(parseErr){
-        // If the remote doc is unreadable, fall back to writing local as-is
-        // rather than blocking saves entirely.
-      }
+      }catch(parseErr){}
     }
     store.days = mergedDays;
     store.tasks = mergedTasks;
     saveLocalCache();
     await docRef.set({ json: JSON.stringify(store) });
+    if(recoveredHistory){
+      const label = document.getElementById('syncLabel');
+      if(label) label.textContent = 'Synced — recovered missing history from the cloud ✓';
+    } else {
+      setSyncStatus('synced');
+    }
   }catch(e){
     setSyncStatus('offline');
+  }finally{
+    saveInFlight = false;
+    if(saveQueued){ saveQueued = false; saveStore(); }
   }
 }
 
