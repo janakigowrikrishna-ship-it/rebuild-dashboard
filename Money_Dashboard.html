@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Money Tracker</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+  :root{
+    --bg:#FBF7F1;
+    --card:#FFFFFF;
+    --ink:#2B2620;
+    --muted:#8A8074;
+    --coral:#E8674A;
+    --teal:#2F8F86;
+    --marigold:#E0A527;
+    --border:#EDE5D8;
+    --danger:#C74B3F;
+    --good:#2F8F86;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    background:var(--bg); color:var(--ink); padding-bottom:60px;
+  }
+  header{
+    padding:22px 20px 14px; position:sticky; top:0; background:var(--bg); z-index:10;
+    border-bottom:1px solid var(--border);
+  }
+  header h1{margin:0; font-size:22px; font-weight:800; letter-spacing:-0.3px;}
+  header p{margin:4px 0 0; font-size:13px; color:var(--muted);}
+  .header-row{display:flex; justify-content:space-between; align-items:flex-start; gap:16px;}
+  .header-left{min-width:0;}
+  .header-right{text-align:right; flex-shrink:0;}
+  .today-date{font-size:18px; color:var(--ink); font-weight:800; letter-spacing:-0.2px;}
+  .next-emi-note{font-size:12px; color:var(--marigold); font-weight:700; margin-top:4px; max-width:200px;}
+  .next-emi-note.overdue{color:var(--danger);}
+  .next-emi-note.calm{color:var(--teal); font-weight:600;}
+  #syncStatus{font-size:11px; margin-top:4px; color:var(--muted);}
+  #syncStatus.ok{color:var(--good);}
+  #syncStatus.err{color:var(--danger);}
+
+  .reminder-banner{
+    background:#FCEFE0; border:1px solid #F0D6A8; color:#8A5A12;
+    border-radius:12px; padding:11px 14px; font-size:13px; font-weight:700;
+    margin-bottom:16px; display:flex; align-items:center; gap:8px;
+  }
+  .reminder-banner .dot{width:7px; height:7px; border-radius:50%; background:var(--marigold); flex-shrink:0;}
+  .monthly-outgo{
+    text-align:center; font-size:12.5px; color:var(--muted); font-weight:600;
+    margin:-8px 0 20px;
+  }
+
+  .wrap{max-width:900px; margin:0 auto; padding:16px;}
+
+  .summary-grid{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:22px;
+  }
+  .summary-card{
+    background:var(--card); border:1px solid var(--border); border-radius:14px;
+    padding:14px 12px; text-align:center;
+  }
+  .summary-card .label{font-size:11px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.4px;}
+  .summary-card .value{font-size:19px; font-weight:800; margin-top:6px;}
+  .summary-card.owe .value{color:var(--danger);}
+  .summary-card.owed .value{color:var(--good);}
+  .summary-card.net .value{color:var(--ink);}
+
+  section.block{
+    background:var(--card); border:1px solid var(--border); border-radius:16px;
+    padding:16px; margin-bottom:18px;
+  }
+  .block-header{
+    display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;
+  }
+  .block-header h2{font-size:15px; margin:0; font-weight:800;}
+  .block-header .tag{font-size:11px; color:var(--muted); font-weight:600;}
+  .add-btn{
+    background:var(--ink); color:#fff; border:none; border-radius:10px;
+    padding:7px 12px; font-size:12px; font-weight:700; cursor:pointer;
+  }
+  .add-btn:active{opacity:0.8;}
+
+  .entry-card{
+    border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:10px;
+    background:#FFFDFA;
+  }
+  .entry-row{display:flex; justify-content:space-between; align-items:flex-start; gap:8px;}
+  .entry-name{font-weight:700; font-size:14.5px;}
+  .entry-pending{font-weight:800; font-size:15px;}
+  .entry-pending.owe{color:var(--danger);}
+  .entry-pending.owed{color:var(--good);}
+  .entry-meta{font-size:12px; color:var(--muted); margin-top:3px; line-height:1.5;}
+  .entry-meta .due-ok{color:var(--teal); font-weight:700;}
+  .entry-meta .due-soon{color:var(--marigold); font-weight:700;}
+  .entry-meta .due-overdue{color:var(--danger); font-weight:700;}
+  .payoff-line{font-size:11.5px; color:var(--teal); font-weight:700; margin-top:4px;}
+  .entry-actions{display:flex; gap:6px; margin-top:10px;}
+  .entry-actions button{
+    flex:1; border:1px solid var(--border); background:#fff; border-radius:8px;
+    padding:7px; font-size:12px; font-weight:600; cursor:pointer; color:var(--ink);
+  }
+  .entry-actions button.del{color:var(--danger); border-color:#F3D8D3;}
+  .entry-actions button.pay{color:var(--good); border-color:#D2E8E4;}
+  .empty-note{font-size:12.5px; color:var(--muted); text-align:center; padding:14px 0;}
+  .cleared-toggle{
+    font-size:12.5px; font-weight:700; color:var(--teal); text-align:center;
+    padding:8px 0; cursor:pointer; margin-top:4px;
+  }
+  .cleared-section{opacity:0.75;}
+  .cleared-section .entry-pending{color:var(--good) !important;}
+  .undo-toast{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+    background:var(--ink); color:#fff; padding:12px 14px; border-radius:12px;
+    display:flex; align-items:center; gap:14px; font-size:13px; z-index:200;
+    box-shadow:0 6px 20px rgba(0,0,0,0.25); max-width:90%;
+  }
+  .undo-toast button{
+    background:var(--marigold); color:var(--ink); border:none; border-radius:8px;
+    padding:6px 12px; font-weight:800; font-size:12.5px; cursor:pointer; flex-shrink:0;
+  }
+
+  .history-list{margin-top:8px; padding-top:8px; border-top:1px dashed var(--border); font-size:11.5px; color:var(--muted);}
+  .history-item{display:flex; justify-content:space-between; padding:2px 0;}
+
+  /* modal */
+  .overlay{
+    position:fixed; inset:0; background:rgba(43,38,32,0.45); display:none;
+    align-items:flex-end; justify-content:center; z-index:100;
+  }
+  .overlay.show{display:flex;}
+  .modal{
+    background:#fff; width:100%; max-width:480px; border-radius:20px 20px 0 0;
+    padding:20px; max-height:88vh; overflow-y:auto;
+  }
+  @media(min-width:600px){
+    .overlay{align-items:center;}
+    .modal{border-radius:18px;}
+  }
+  .modal h3{margin:0 0 14px; font-size:16px; font-weight:800;}
+  .field{margin-bottom:12px;}
+  .field label{display:block; font-size:12px; font-weight:700; color:var(--muted); margin-bottom:5px;}
+  .field input, .field textarea{
+    width:100%; padding:10px 11px; border:1px solid var(--border); border-radius:10px;
+    font-size:14px; font-family:inherit; background:#FBF7F1;
+  }
+  .field textarea{resize:vertical; min-height:50px;}
+  .field-row{display:flex; gap:10px;}
+  .field-row .field{flex:1;}
+  .modal-actions{display:flex; gap:10px; margin-top:16px;}
+  .modal-actions button{
+    flex:1; padding:12px; border-radius:12px; border:none; font-weight:700; font-size:14px; cursor:pointer;
+  }
+  .modal-actions .cancel{background:#F0EBE2; color:var(--ink);}
+  .modal-actions .save{background:var(--coral); color:#fff;}
+  .close-x{position:absolute; top:14px; right:16px; background:none; border:none; font-size:20px; color:var(--muted); cursor:pointer;}
+  .modal{position:relative;}
+  .calc-preview{
+    background:#F3EFE6; border-radius:10px; padding:9px 12px; font-size:12.5px;
+    font-weight:700; color:var(--teal); margin-bottom:12px;
+  }
+  .progress-track{
+    height:6px; background:var(--border); border-radius:4px; margin-top:8px; overflow:hidden;
+  }
+  .progress-fill{height:100%; background:var(--teal); border-radius:4px;}
+  .entry-pending.owe ~ .progress-track .progress-fill,
+  .progress-fill.owe{background:var(--coral);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-row">
+    <div class="header-left">
+      <h1>Money Tracker</h1>
+      <p>Bank loans, EMIs &amp; personal borrow/lend — synced across devices</p>
+      <div id="syncStatus">Connecting…</div>
+    </div>
+    <div class="header-right">
+      <div id="todayDate" class="today-date"></div>
+      <div id="nextEmiNote" class="next-emi-note"></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div id="reminderBanner" class="reminder-banner" style="display:none;"></div>
+
+  <div class="summary-grid">
+    <div class="summary-card owe">
+      <div class="label">You Owe (Total)</div>
+      <div class="value" id="totalOwe">₹0</div>
+    </div>
+    <div class="summary-card owed">
+      <div class="label">Owed To You</div>
+      <div class="value" id="totalOwed">₹0</div>
+    </div>
+    <div class="summary-card net">
+      <div class="label">Net Position</div>
+      <div class="value" id="netPosition">₹0</div>
+    </div>
+  </div>
+  <div id="monthlyOutgo" class="monthly-outgo">Monthly EMI outgo: ₹0</div>
+
+  <!-- BANK LOANS / EMI -->
+  <section class="block">
+    <div class="block-header">
+      <div>
+        <h2>Bank Loans &amp; EMIs</h2>
+        <div class="tag" id="bankTotal">Total pending: ₹0</div>
+      </div>
+      <button class="add-btn" onclick="openModal('bank')">+ Add</button>
+    </div>
+    <div id="bankList"></div>
+  </section>
+
+  <!-- BORROWED FROM FRIENDS -->
+  <section class="block">
+    <div class="block-header">
+      <div>
+        <h2>Money Borrowed (Friends)</h2>
+        <div class="tag" id="borrowedTotal">Total pending: ₹0</div>
+      </div>
+      <button class="add-btn" onclick="openModal('borrowed')">+ Add</button>
+    </div>
+    <div id="borrowedList"></div>
+  </section>
+
+  <!-- LENT TO OTHERS -->
+  <section class="block">
+    <div class="block-header">
+      <div>
+        <h2>Money Lent (To Others)</h2>
+        <div class="tag" id="lentTotal">Total pending: ₹0</div>
+      </div>
+      <button class="add-btn" onclick="openModal('lent')">+ Add</button>
+    </div>
+    <div id="lentList"></div>
+  </section>
+
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal()">✕</button>
+    <h3 id="modalTitle">Add Entry</h3>
+
+    <div class="field">
+      <label id="lblName">Name</label>
+      <input type="text" id="fName" placeholder="e.g. HDFC Home Loan / Arun">
+    </div>
+
+    <!-- bank-only fields -->
+    <div id="bankFields">
+      <div class="field-row">
+        <div class="field">
+          <label>EMI Amount (₹ / month)</label>
+          <input type="number" id="fEmi" placeholder="0" oninput="updateCalcPreview()">
+        </div>
+        <div class="field">
+          <label>Number of EMIs Remaining</label>
+          <input type="number" id="fMonths" placeholder="0" oninput="updateCalcPreview()">
+        </div>
+      </div>
+      <div class="field">
+        <label>EMI Due Day of Month (1–31)</label>
+        <input type="number" id="fDueDay" placeholder="e.g. 5" min="1" max="31">
+      </div>
+      <div class="calc-preview" id="calcPreview">Total pending will auto-calculate: ₹0</div>
+    </div>
+
+    <!-- friend-only fields -->
+    <div id="friendFields">
+      <div class="field">
+        <label>Total Amount (₹)</label>
+        <input type="number" id="fPending" placeholder="0">
+      </div>
+      <div class="field">
+        <label>Expected Return Date</label>
+        <input type="date" id="fReturnDate">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Notes</label>
+      <textarea id="fNotes" placeholder="Any details worth remembering"></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="cancel" onclick="closeModal()">Cancel</button>
+      <button class="save" onclick="saveEntry()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- UNDO TOAST -->
+<div id="undoToast" class="undo-toast" style="display:none;">
+  <span id="undoText">Payment logged.</span>
+  <button onclick="undoLastPayment()">Undo</button>
+</div>
+
+<script>
+/* ================= FIREBASE ================= */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyC_bVUrw4PWlR0msJBziHh81s_B5gdD0ZA",
+  authDomain: "rebuild-c80dd.firebaseapp.com",
+  projectId: "rebuild-c80dd",
+  storageBucket: "rebuild-c80dd.firebasestorage.app",
+  messagingSenderId: "280762731090",
+  appId: "1:280762731090:web:0a46841a772adeccafad8b"
+};
+
+const DOC_PATH = { collection: "rebuild", doc: "brother-money-dashboard" };
+
+let db, docRef;
+let state = { bank: [], borrowed: [], lent: [] };
+let saveTimer = null;
+
+function setStatus(text, cls){
+  const el = document.getElementById('syncStatus');
+  el.textContent = text;
+  el.className = cls || '';
+}
+
+function initFirebase(){
+  try{
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.firestore();
+    docRef = db.collection(DOC_PATH.collection).doc(DOC_PATH.doc);
+
+    const timeout = setTimeout(()=>{
+      setStatus('Sync taking long — check your internet connection.', 'err');
+    }, 8000);
+
+    docRef.onSnapshot((snap)=>{
+      clearTimeout(timeout);
+      if(snap.exists){
+        const data = snap.data();
+        state.bank = data.bank || [];
+        state.borrowed = data.borrowed || [];
+        state.lent = data.lent || [];
+      }
+      render();
+      setStatus('Synced ✓', 'ok');
+    }, (err)=>{
+      clearTimeout(timeout);
+      console.error(err);
+      setStatus('Sync error — working offline. Changes will retry.', 'err');
+    });
+  }catch(e){
+    console.error(e);
+    setStatus('Could not connect to sync. Working locally only.', 'err');
+  }
+}
+
+function queueSave(){
+  setStatus('Saving…', '');
+  if(saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(()=>{
+    if(!docRef) return;
+    docRef.set(state).then(()=>{
+      setStatus('Synced ✓', 'ok');
+    }).catch((e)=>{
+      console.error(e);
+      setStatus('Save failed — check connection.', 'err');
+    });
+  }, 400);
+}
+
+/* ================= HELPERS ================= */
+function fmt(n){
+  n = Number(n) || 0;
+  return '₹' + n.toLocaleString('en-IN');
+}
+function uid(){
+  return Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+}
+function daysUntil(dateStr){
+  if(!dateStr) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const target = new Date(dateStr);
+  const diff = Math.round((target - today) / 86400000);
+  return diff;
+}
+
+/* ================= RENDER ================= */
+function render(){
+  renderTodayDate();
+  renderReminderBanner();
+  renderList('bank');
+  renderList('borrowed');
+  renderList('lent');
+  renderSummary();
+}
+
+function renderTodayDate(){
+  const today = new Date();
+  document.getElementById('todayDate').textContent = today.toLocaleDateString('en-IN', {
+    day: 'numeric', month: 'short', year: 'numeric'
+  });
+
+  let nearest = null;
+  state.bank.forEach(e=>{
+    if((e.months||0) <= 0 || !e.dueDay) return;
+    const nd = nextDueInfo(e.dueDay);
+    if(nd && (!nearest || nd.diff < nearest.diff)) nearest = { name: e.name, diff: nd.diff };
+  });
+
+  const note = document.getElementById('nextEmiNote');
+  if(!nearest){
+    note.textContent = '';
+    note.className = 'next-emi-note';
+    return;
+  }
+  let cls = 'next-emi-note calm', text = `Next EMI: ${nearest.name} in ${nearest.diff}d`;
+  if(nearest.diff <= 0){ cls = 'next-emi-note overdue'; text = `Next EMI: ${nearest.name} — due today`; }
+  else if(nearest.diff <= 3){ cls = 'next-emi-note'; text = `Next EMI: ${nearest.name} in ${nearest.diff}d`; }
+  note.textContent = text;
+  note.className = cls;
+}
+
+function renderReminderBanner(){
+  const banner = document.getElementById('reminderBanner');
+  const dueSoon = [];
+  state.bank.forEach(e=>{
+    if((e.months||0) <= 0 || !e.dueDay) return;
+    const nd = nextDueInfo(e.dueDay);
+    if(nd && nd.diff <= 7) dueSoon.push({ name: e.name, diff: nd.diff });
+  });
+  const overdueFriends = [];
+  state.borrowed.concat(state.lent).forEach(e=>{
+    const p = pendingOf('x', e);
+    if(p > 0 && e.returnDate){
+      const d = daysUntil(e.returnDate);
+      if(d !== null && d < 0) overdueFriends.push(e.name);
+    }
+  });
+
+  if(!dueSoon.length && !overdueFriends.length){
+    banner.style.display = 'none';
+    return;
+  }
+  let parts = [];
+  if(dueSoon.length) parts.push(`${dueSoon.length} EMI${dueSoon.length>1?'s':''} due within a week`);
+  if(overdueFriends.length) parts.push(`${overdueFriends.length} overdue return${overdueFriends.length>1?'s':''}`);
+  banner.innerHTML = `<span class="dot"></span> ${parts.join(' &nbsp;•&nbsp; ')}`;
+  banner.style.display = 'flex';
+}
+
+function renderSummary(){
+  const bankTotal = state.bank.reduce((s,e)=>s+pendingOf('bank',e),0);
+  const borrowedTotal = state.borrowed.reduce((s,e)=>s+pendingOf('borrowed',e),0);
+  const lentTotal = state.lent.reduce((s,e)=>s+pendingOf('lent',e),0);
+
+  document.getElementById('bankTotal').textContent = 'Total pending: ' + fmt(bankTotal);
+  document.getElementById('borrowedTotal').textContent = 'Total pending: ' + fmt(borrowedTotal);
+  document.getElementById('lentTotal').textContent = 'Total pending: ' + fmt(lentTotal);
+
+  const owe = bankTotal + borrowedTotal;
+  const owed = lentTotal;
+  const net = owed - owe;
+
+  document.getElementById('totalOwe').textContent = fmt(owe);
+  document.getElementById('totalOwed').textContent = fmt(owed);
+  const netEl = document.getElementById('netPosition');
+  netEl.textContent = (net<0? '-':'') + fmt(Math.abs(net));
+  netEl.style.color = net < 0 ? 'var(--danger)' : (net>0 ? 'var(--good)' : 'var(--ink)');
+
+  const monthlyOutgo = state.bank.reduce((s,e)=> s + ((e.months||0)>0 ? (Number(e.emi)||0) : 0), 0);
+  document.getElementById('monthlyOutgo').textContent = 'Monthly EMI outgo: ' + fmt(monthlyOutgo);
+}
+
+function urgencyScore(type, e){
+  const pending = pendingOf(type, e);
+  if(pending <= 0) return 999999; // cleared, sinks to bottom (moved to Cleared section anyway)
+  if(type === 'bank'){
+    if(e.dueDay){
+      const nd = nextDueInfo(e.dueDay);
+      if(nd) return nd.diff;
+    }
+    return 500; // no due day set
+  } else {
+    if(e.returnDate){
+      const d = daysUntil(e.returnDate);
+      if(d !== null) return d;
+    }
+    return 500;
+  }
+}
+
+function renderList(type){
+  const all = state[type];
+  const container = document.getElementById(type+'List');
+
+  const active = all.filter(e => pendingOf(type, e) > 0);
+  const cleared = all.filter(e => pendingOf(type, e) <= 0);
+
+  active.sort((a,b) => urgencyScore(type,a) - urgencyScore(type,b));
+
+  if(!active.length && !cleared.length){
+    container.innerHTML = '<div class="empty-note">Nothing added yet.</div>';
+    return;
+  }
+
+  let html = active.length
+    ? active.map(e => entryCardHTML(type, e)).join('')
+    : '<div class="empty-note">All cleared here 🎉</div>';
+
+  if(cleared.length){
+    html += `
+    <div class="cleared-toggle" onclick="toggleCleared('${type}')">
+      <span id="clearedLabel-${type}">▸ Cleared (${cleared.length})</span>
+    </div>
+    <div class="cleared-section" id="clearedSection-${type}" style="display:none;">
+      ${cleared.map(e => entryCardHTML(type, e)).join('')}
+    </div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+function toggleCleared(type){
+  const section = document.getElementById('clearedSection-'+type);
+  const label = document.getElementById('clearedLabel-'+type);
+  const isOpen = section.style.display !== 'none';
+  section.style.display = isOpen ? 'none' : 'block';
+  label.textContent = label.textContent.replace(isOpen ? '▾' : '▸', isOpen ? '▸' : '▾');
+}
+
+function nextDueInfo(dueDay){
+  if(!dueDay) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  let due = new Date(today.getFullYear(), today.getMonth(), dueDay);
+  if(due < today) due = new Date(today.getFullYear(), today.getMonth()+1, dueDay);
+  const diff = Math.round((due - today) / 86400000);
+  return { date: due, diff };
+}
+
+function payoffLine(monthsRemaining){
+  if(!monthsRemaining || monthsRemaining <= 0) return '';
+  const d = new Date();
+  d.setMonth(d.getMonth() + monthsRemaining);
+  const label = d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+  return `Paid off by ${label} (${monthsRemaining} EMI${monthsRemaining>1?'s':''} left)`;
+}
+
+function pendingOf(type, e){
+  if(type === 'bank'){
+    return (Number(e.emi)||0) * (Number(e.months)||0);
+  }
+  return Number(e.pending)||0;
+}
+
+function entryCardHTML(type, e){
+  const pendingClass = type === 'lent' ? 'owed' : 'owe';
+  const pending = pendingOf(type, e);
+  let meta = '';
+  let progressHTML = '';
+
+  if(type === 'bank'){
+    meta = `EMI: ${fmt(e.emi)} / month &nbsp;•&nbsp; ${e.months || 0} EMI(s) remaining`;
+    if(e.dueDay){
+      const nd = nextDueInfo(e.dueDay);
+      if(nd){
+        let cls = 'due-ok', text = `Due ${nd.date.toLocaleDateString('en-IN',{day:'numeric',month:'short'})}`;
+        if(nd.diff <= 0){ cls='due-overdue'; text = 'Due today'; }
+        else if(nd.diff <= 3){ cls='due-soon'; text = `Due in ${nd.diff}d`; }
+        meta += ` &nbsp;•&nbsp; <span class="${cls}">${text}</span>`;
+      }
+    }
+    if(e.totalEmis){
+      const paidCount = Math.max(0, e.totalEmis - (e.months||0));
+      const pct = e.totalEmis ? Math.round((paidCount/e.totalEmis)*100) : 0;
+      meta += ` &nbsp;•&nbsp; ${paidCount}/${e.totalEmis} paid`;
+      progressHTML = `<div class="progress-track"><div class="progress-fill owe" style="width:${pct}%"></div></div>`;
+    }
+    const pl = payoffLine(e.months);
+    if(pl) meta += `<div class="payoff-line">${pl}</div>`;
+  } else {
+    const d = daysUntil(e.returnDate);
+    let dText = '';
+    if(e.returnDate){
+      if(d === null) dText = '';
+      else if(d < 0) dText = `<span style="color:var(--danger); font-weight:700;">Overdue by ${Math.abs(d)}d</span>`;
+      else if(d === 0) dText = `<span style="color:var(--marigold); font-weight:700;">Due today</span>`;
+      else dText = `Expected: ${e.returnDate} (${d}d left)`;
+    }
+    meta = dText;
+    if(e.totalAmount){
+      const pct = e.totalAmount ? Math.round(((e.totalAmount-pending)/e.totalAmount)*100) : 0;
+      meta += (meta?' &nbsp;•&nbsp; ':'') + `${fmt(e.totalAmount-pending)} of ${fmt(e.totalAmount)} settled`;
+      progressHTML = `<div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>`;
+    }
+  }
+  if(e.notes){
+    meta += (meta ? '<br>' : '') + escapeHtml(e.notes);
+  }
+
+  let history = '';
+  if(e.history && e.history.length){
+    history = '<div class="history-list">' + e.history.map(h =>
+      `<div class="history-item"><span>${h.date}</span><span>-${fmt(h.amount)}</span></div>`
+    ).join('') + '</div>';
+  }
+
+  const payLabel = type === 'bank' ? 'Mark EMI Paid' : 'Log Payment';
+
+  return `
+  <div class="entry-card">
+    <div class="entry-row">
+      <div>
+        <div class="entry-name">${escapeHtml(e.name)}</div>
+        <div class="entry-meta">${meta}</div>
+      </div>
+      <div class="entry-pending ${pendingClass}">${fmt(pending)}</div>
+    </div>
+    ${progressHTML}
+    ${history}
+    <div class="entry-actions">
+      <button class="pay" onclick="logPayment('${type}','${e.id}')">${payLabel}</button>
+      <button onclick="editEntry('${type}','${e.id}')">Edit</button>
+      <button class="del" onclick="deleteEntry('${type}','${e.id}')">Delete</button>
+    </div>
+  </div>`;
+}
+
+function escapeHtml(s){
+  if(!s) return '';
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+/* ================= MODAL ================= */
+let modalType = null;
+let editingId = null;
+
+function openModal(type, id){
+  modalType = type;
+  editingId = id || null;
+
+  document.getElementById('bankFields').style.display = (type === 'bank') ? 'block' : 'none';
+  document.getElementById('friendFields').style.display = (type === 'bank') ? 'none' : 'block';
+  document.getElementById('lblName').textContent = (type === 'bank') ? 'Bank / Loan Name' : 'Name';
+
+  const titleMap = { bank: 'Bank Loan / EMI', borrowed: 'Borrowed from Friend', lent: 'Lent to Someone' };
+  document.getElementById('modalTitle').textContent = (id ? 'Edit ' : 'Add ') + titleMap[type];
+
+  const amountLabel = document.querySelector('#friendFields .field:first-child label');
+  if(amountLabel){ amountLabel.textContent = id ? 'Pending Amount (₹)' : 'Total Amount (₹)'; }
+
+  if(id){
+    const e = state[type].find(x=>x.id===id);
+    document.getElementById('fName').value = e.name || '';
+    document.getElementById('fPending').value = (type==='bank') ? '' : (e.totalAmount || e.pending || '');
+    document.getElementById('fEmi').value = e.emi || '';
+    document.getElementById('fMonths').value = e.months || '';
+    document.getElementById('fDueDay').value = e.dueDay || '';
+    document.getElementById('fReturnDate').value = e.returnDate || '';
+    document.getElementById('fNotes').value = e.notes || '';
+  } else {
+    document.getElementById('fName').value = '';
+    document.getElementById('fPending').value = '';
+    document.getElementById('fEmi').value = '';
+    document.getElementById('fMonths').value = '';
+    document.getElementById('fDueDay').value = '';
+    document.getElementById('fReturnDate').value = '';
+    document.getElementById('fNotes').value = '';
+  }
+
+  updateCalcPreview();
+  document.getElementById('overlay').classList.add('show');
+}
+
+function updateCalcPreview(){
+  const emi = Number(document.getElementById('fEmi').value) || 0;
+  const months = Number(document.getElementById('fMonths').value) || 0;
+  document.getElementById('calcPreview').textContent =
+    `Total pending will auto-calculate: ${fmt(emi*months)}  (${fmt(emi)} × ${months})`;
+}
+
+function closeModal(){
+  document.getElementById('overlay').classList.remove('show');
+  modalType = null;
+  editingId = null;
+}
+
+function editEntry(type, id){
+  openModal(type, id);
+}
+
+function saveEntry(){
+  const name = document.getElementById('fName').value.trim();
+  if(!name){ alert('Please enter a name.'); return; }
+  const amountVal = Number(document.getElementById('fPending').value) || 0;
+  const emi = Number(document.getElementById('fEmi').value) || 0;
+  const months = Number(document.getElementById('fMonths').value) || 0;
+  const dueDay = Number(document.getElementById('fDueDay').value) || 0;
+  const returnDate = document.getElementById('fReturnDate').value || '';
+  const notes = document.getElementById('fNotes').value.trim();
+
+  if(modalType === 'bank'){
+    if(editingId){
+      const e = state.bank.find(x=>x.id===editingId);
+      e.name = name; e.emi = emi; e.months = months; e.dueDay = dueDay; e.notes = notes;
+      if(months > (e.totalEmis||0)) e.totalEmis = months;
+    } else {
+      state.bank.push({
+        id: uid(), name, emi, months, dueDay, totalEmis: months, notes, history: []
+      });
+    }
+  } else {
+    if(editingId){
+      const e = state[modalType].find(x=>x.id===editingId);
+      e.name = name; e.pending = amountVal; e.returnDate = returnDate; e.notes = notes;
+      if(!e.totalAmount || amountVal > e.totalAmount) e.totalAmount = amountVal;
+    } else {
+      state[modalType].push({
+        id: uid(), name, pending: amountVal, totalAmount: amountVal,
+        returnDate, notes, history: []
+      });
+    }
+  }
+
+  closeModal();
+  render();
+  queueSave();
+}
+
+function deleteEntry(type, id){
+  if(!confirm('Delete this entry? This cannot be undone.')) return;
+  state[type] = state[type].filter(e=>e.id!==id);
+  render();
+  queueSave();
+}
+
+let lastAction = null;
+let undoTimer = null;
+
+function showUndoToast(text){
+  document.getElementById('undoText').textContent = text;
+  document.getElementById('undoToast').style.display = 'flex';
+  if(undoTimer) clearTimeout(undoTimer);
+  undoTimer = setTimeout(()=>{
+    document.getElementById('undoToast').style.display = 'none';
+    lastAction = null;
+  }, 6000);
+}
+
+function logPayment(type, id){
+  const e = state[type].find(x=>x.id===id);
+
+  if(type === 'bank'){
+    if((e.months||0) <= 0){ alert('No EMIs remaining for this loan.'); return; }
+    const defaultAmt = e.emi || 0;
+    const amtStr = prompt(`Mark an EMI as paid for "${e.name}".\nEMI amount: ${fmt(defaultAmt)}\nConfirm amount paid:`, defaultAmt);
+    if(amtStr === null) return;
+    const amt = Number(amtStr);
+    if(!amt || amt <= 0){ alert('Enter a valid positive amount.'); return; }
+
+    e.months = Math.max(0, (Number(e.months)||0) - 1);
+    e.history = e.history || [];
+    e.history.unshift({ date: new Date().toISOString().slice(0,10), amount: amt });
+
+    lastAction = { type, id, kind: 'bank', monthsDelta: 1 };
+    showUndoToast(`EMI marked paid for ${e.name}.`);
+  } else {
+    const pending = pendingOf(type, e);
+    const amtStr = prompt(`Log a payment for "${e.name}".\nCurrent pending: ${fmt(pending)}\nEnter amount paid/received:`);
+    if(amtStr === null) return;
+    const amt = Number(amtStr);
+    if(!amt || amt <= 0){ alert('Enter a valid positive amount.'); return; }
+
+    e.pending = Math.max(0, pending - amt);
+    e.history = e.history || [];
+    e.history.unshift({ date: new Date().toISOString().slice(0,10), amount: amt });
+
+    lastAction = { type, id, kind: 'friend', pendingDelta: amt };
+    showUndoToast(`Payment of ${fmt(amt)} logged for ${e.name}.`);
+  }
+
+  render();
+  queueSave();
+}
+
+function undoLastPayment(){
+  if(!lastAction) return;
+  const e = state[lastAction.type].find(x=>x.id===lastAction.id);
+  if(e){
+    e.history = e.history || [];
+    e.history.shift();
+    if(lastAction.kind === 'bank'){
+      e.months = (Number(e.months)||0) + lastAction.monthsDelta;
+    } else {
+      e.pending = (Number(e.pending)||0) + lastAction.pendingDelta;
+    }
+  }
+  lastAction = null;
+  document.getElementById('undoToast').style.display = 'none';
+  if(undoTimer) clearTimeout(undoTimer);
+  render();
+  queueSave();
+}
+
+/* ================= INIT ================= */
+initFirebase();
+render();
+</script>
+</body>
+</html>
