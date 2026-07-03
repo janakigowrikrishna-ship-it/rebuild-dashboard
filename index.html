@@ -653,7 +653,18 @@ function initFirebase(){
   }
 }
 
-function todayStr(){ return new Date().toISOString().slice(0,10); }
+function todayStr(){
+  // Deliberately NOT using toISOString() here — that converts to UTC, which
+  // meant "today" flipped to yesterday for ~5.5 hours every night in IST
+  // (e.g. 1:42 AM IST is still 8:12 PM the previous day in UTC). Building
+  // the date string from local year/month/day fields keeps it correct
+  // regardless of timezone.
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
 
 function loadLocalCache(){
   try{
