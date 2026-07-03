@@ -212,7 +212,7 @@ This typically indicates that your device does not have a healthy Internet conne
   .day-cell{display:flex;flex-direction:column;align-items:center;gap:2px;padding:2px 0;border-radius:9px;cursor:pointer;}
   .day-cell:hover{background:var(--bg);}
   .day-cell.today .num{color:var(--coral);}
-  .day-cell.future{opacity:.3;cursor:default;pointer-events:none;}
+  .day-cell.future{opacity:.55;}
   .day-cell .num{font-family:'Space Mono',monospace;font-size:9.5px;color:var(--muted);}
   .month-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:var(--muted);}
   .month-legend .item{display:flex;align-items:center;gap:5px;}
@@ -760,7 +760,6 @@ document.querySelectorAll('.tab').forEach(t=>{
 
 const dateSelector = document.getElementById('dateSelector');
 dateSelector.value = selectedDate;
-dateSelector.max = realToday;
 dateSelector.addEventListener('change', ()=> switchDate(dateSelector.value));
 
 function switchDate(newDate){
@@ -777,10 +776,12 @@ function jumpToDate(d){ switchDate(d); }
 
 function updateHeroLabel(){
   const isToday = selectedDate === realToday;
+  const isFutureDay = selectedDate > realToday;
   const dObj = new Date(selectedDate + 'T00:00:00');
   const label = dObj.toLocaleDateString('en-IN',{weekday:'long', year:'numeric', month:'long', day:'numeric'});
-  document.getElementById('greeting').textContent = isToday ? 'Hi Janu' : 'Editing a past day';
+  document.getElementById('greeting').textContent = isToday ? 'Hi Janu' : (isFutureDay ? 'Planning ahead' : 'Editing a past day');
   document.getElementById('todayDate').textContent = label;
+  document.getElementById('editingFlag').textContent = isFutureDay ? 'Planning a future day' : 'Editing a past day';
   document.getElementById('editingFlag').classList.toggle('show', !isToday);
   renderRingQuote(dObj);
 }
@@ -1414,7 +1415,7 @@ function renderMonth(){
       if(scored.length) overallScores.push(scored.reduce((a,b)=>a+b,0)/scored.length);
     }
     const isToday = dstr === realToday;
-    html += `<div class="day-cell ${isToday?'today':''} ${isFuture?'future':''}" onclick="${isFuture?'':`jumpToDateAndShow('${dstr}')`}">
+    html += `<div class="day-cell ${isToday?'today':''} ${isFuture?'future':''}" onclick="jumpToDateAndShow('${dstr}')">
       ${tripleRingSVG(sc.d, sc.f, sc.p, 26)}
       <span class="num">${dnum}</span>
     </div>`;
@@ -1621,7 +1622,6 @@ async function initApp(){
   day = store.days[selectedDate];
 
   dateSelector.value = selectedDate;
-  dateSelector.max = realToday;
 
   updateHeroLabel();
   refreshFormFields();
