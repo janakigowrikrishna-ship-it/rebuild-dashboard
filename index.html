@@ -96,6 +96,10 @@ This typically indicates that your device does not have a healthy Internet conne
   .date-nav{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;}
   .date-nav input[type=date]{padding:8px 10px;border:1.5px solid var(--line);border-radius:10px;font-family:'Space Mono',monospace;font-size:13px;background:var(--surface);}
   .today-btn{background:var(--ink);color:#fff;border:none;padding:8px 14px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;}
+  .mode-btn{background:var(--bg);color:var(--muted);border:1.5px solid var(--line);padding:7px 14px;border-radius:999px;font-size:12.5px;font-weight:700;cursor:pointer;}
+  .mode-btn.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .trend-month-cell{display:flex;flex-direction:column;align-items:center;gap:4px;width:78px;}
+  .trend-month-cell .lbl{font-size:11px;font-weight:700;color:var(--muted);text-align:center;}
   .editing-flag{display:none;background:var(--marigold-soft);color:#7a5a00;font-size:12px;font-weight:700;padding:6px 12px;border-radius:999px;}
   .editing-flag.show{display:inline-block;}
   .streak-pill{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:8px 16px;box-shadow:var(--shadow);height:fit-content;}
@@ -242,6 +246,15 @@ This typically indicates that your device does not have a healthy Internet conne
         <button class="today-btn" onclick="jumpToDate(todayStr())">Jump to Today</button>
         <span class="editing-flag" id="editingFlag">Editing a past day</span>
       </div>
+      <div style="margin-top:10px;max-width:420px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <input type="text" id="dayNote" placeholder="Day note — e.g. Traveling, At a friend's, Sick… (optional)"
+          style="flex:1;min-width:220px;padding:8px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);font-size:12.5px;color:var(--ink);"
+          onchange="saveDayNote()">
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap;">
+          <input type="checkbox" id="offDayToggle" onchange="saveOffDay()" style="width:15px;height:15px;accent-color:var(--marigold);cursor:pointer;">
+          Off day
+        </label>
+      </div>
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
       <div class="sync-pill" id="syncPill"><span class="dot" id="syncDot"></span><span id="syncLabel">Checking sync…</span></div>
@@ -277,8 +290,8 @@ This typically indicates that your device does not have a healthy Internet conne
     <div class="tab" data-tab="fitness">Fitness</div>
     <div class="tab" data-tab="reset">Reset</div>
     <div class="tab" data-tab="productivity">Productivity</div>
-    <div class="tab" data-tab="month">Month</div>
-    <div class="tab" data-tab="trends">Trends &amp; History</div>
+    <div class="tab" data-tab="month">History</div>
+    <div class="tab" data-tab="trends">Trends</div>
   </div>
 
   <!-- DIET -->
@@ -465,9 +478,14 @@ This typically indicates that your device does not have a healthy Internet conne
     </div>
   </div>
 
-  <!-- MONTH -->
+  <!-- MONTH / HISTORY -->
   <div class="panel" id="panel-month">
     <div class="card">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+        <button class="mode-btn" id="modeBtn-whole" onclick="setHistoryMode('whole')">Whole</button>
+        <button class="mode-btn" id="modeBtn-on" onclick="setHistoryMode('on')">On days</button>
+        <button class="mode-btn" id="modeBtn-off" onclick="setHistoryMode('off')">Off days</button>
+      </div>
       <div class="month-nav">
         <button onclick="shiftMonth(-1)">‹</button>
         <div class="lbl" id="monthLabel"></div>
@@ -479,9 +497,29 @@ This typically indicates that your device does not have a healthy Internet conne
         <div class="item"><span class="dot" style="background:var(--teal)"></span> Fitness</div>
         <div class="item"><span class="dot" style="background:var(--marigold)"></span> Productivity</div>
         <div class="item"><span class="dot" style="background:var(--line)"></span> Not logged</div>
+        <div class="item"><span class="dot" style="background:var(--sky)"></span> Off day</div>
       </div>
       <div class="month-summary kpi-grid" id="monthSummary"></div>
       <div id="monthClassBreakdown" class="month-class-rows"></div>
+    </div>
+    <div class="card">
+      <h2>This month's average <span style="font-weight:400;color:var(--muted);font-size:13px;" id="monthAvgModeLabel"></span></h2>
+      <div class="ring-card" style="margin-bottom:0;">
+        <div class="ring-wrap" id="monthAvgRingWrap"></div>
+        <div class="ring-legend">
+          <div class="legend-row"><span class="dot" style="background:var(--coral)"></span>Diet<span class="pct" id="monthAvgPctDiet">—</span></div>
+          <div class="legend-row"><span class="dot" style="background:var(--teal)"></span>Fitness<span class="pct" id="monthAvgPctFitness">—</span></div>
+          <div class="legend-row"><span class="dot" style="background:var(--marigold)"></span>Productivity<span class="pct" id="monthAvgPctProd">—</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>History trend <span style="font-weight:400;color:var(--muted);font-size:13px;" id="trendModeLabel"></span></h2>
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <button class="mode-btn" id="rangeBtn-6" onclick="setTrendRange(6)">Last 6 months</button>
+        <button class="mode-btn" id="rangeBtn-12" onclick="setTrendRange(12)">Last 12 months</button>
+      </div>
+      <div id="trendRingRow" style="display:flex;gap:16px;flex-wrap:wrap;justify-content:flex-start;"></div>
     </div>
   </div>
 
@@ -537,7 +575,7 @@ This typically indicates that your device does not have a healthy Internet conne
       <div class="export-row">
         <button class="export-btn" onclick="exportExcel()" style="font-weight:700;">⬇ Export Excel (.xlsx — best for analysis)</button>
         <button class="export-btn" onclick="exportCSV()">⬇ Export CSV</button>
-        <button class="export-btn" onclick="exportJSON()">⬇ Export JSON (manual backup)</button>
+        <button class="export-btn" onclick="downloadBackup()">⬇ Export JSON (manual backup)</button>
         <button class="export-btn" onclick="document.getElementById('importFile').click()">⬆ Import backup</button>
       </div>
       <input type="file" id="importFile" accept=".json" onchange="importJSON(event)">
@@ -868,6 +906,8 @@ function resetTargets(){
   flashMsg('msg-targets');
 }
 function refreshFormFields(){
+  document.getElementById('dayNote').value = day.note || '';
+  document.getElementById('offDayToggle').checked = !!day.offDay;
   ['calories','protein','carbs','fat','fiber','water','caloriesBurnt','screenHours','steps'].forEach(f=>{
     const el = document.getElementById('in-'+f);
     el.value = day[f] !== undefined ? day[f] : '';
@@ -947,6 +987,20 @@ function saveMeTime(){
   const mn = document.getElementById('in-meMinutes').value;
   day.meMinutes = mn === '' ? undefined : Number(mn);
   saveStore(); flashMsg('msg-metime');
+}
+function saveDayNote(){
+  const val = document.getElementById('dayNote').value.trim();
+  day.note = val || undefined;
+  saveStore();
+}
+// Purely a tracking flag — deliberately does NOT touch dayCategoryScores, prodScoreFor,
+// dietScoreFor, or fitnessScoreFor. Whatever you log on an off day is still scored
+// exactly like any other day; this just lets you count how many off days you took
+// without silently letting you "sleep the whole day" unnoticed.
+function saveOffDay(){
+  day.offDay = document.getElementById('offDayToggle').checked || undefined;
+  saveStore();
+  renderMonth();
 }
 function saveProductivity(){
   const sh = document.getElementById('in-screenHours').value;
@@ -1099,13 +1153,26 @@ function setRing(id, pct, circumference){
   el.style.strokeDashoffset = offset;
 }
 function renderRings(){
-  const dS = dietScoreFor(day), fS = fitnessScoreFor(day), pS = prodScoreFor(day);
-  setRing('ringDiet', dS, 402);
-  setRing('ringFitness', fS, 308);
-  setRing('ringProd', pS, 214);
-  document.getElementById('pctDiet').textContent = Math.round(dS*100)+'%';
-  document.getElementById('pctFitness').textContent = Math.round(fS*100)+'%';
-  document.getElementById('pctProd').textContent = Math.round(pS*100)+'%';
+  // Use the same "logged vs not logged" logic the calendar already uses,
+  // so a vacation/off day shows as "not logged" (—) rather than a false 0%,
+  // which previously contradicted how that same day is treated in monthly averages.
+  const scores = dayCategoryScores(day);
+  const setRingState = (ringId, pctElId, score, circumference) => {
+    const ringEl = document.getElementById(ringId);
+    const pctEl = document.getElementById(pctElId);
+    if(score === null){
+      ringEl.style.strokeDashoffset = circumference;
+      ringEl.style.opacity = '0.25';
+      pctEl.textContent = '—';
+    } else {
+      setRing(ringId, score, circumference);
+      ringEl.style.opacity = '1';
+      pctEl.textContent = Math.round(score*100)+'%';
+    }
+  };
+  setRingState('ringDiet', 'pctDiet', scores.d, 402);
+  setRingState('ringFitness', 'pctFitness', scores.f, 308);
+  setRingState('ringProd', 'pctProd', scores.p, 214);
 }
 
 function renderDietBars(){
@@ -1373,9 +1440,58 @@ function jumpToDateAndShow(d){
 /* ---- Month completion-ring view ---- */
 let monthCursor = new Date(realToday+'T00:00:00');
 monthCursor.setDate(1);
+let historyMode = 'whole'; // 'whole' | 'on' | 'off' — filters the averages, never the calendar cells themselves
+let trendRange = 6; // 6 or 12 months
 function shiftMonth(delta){
   monthCursor.setMonth(monthCursor.getMonth()+delta);
   renderMonth();
+}
+function setHistoryMode(mode){
+  historyMode = mode;
+  renderMonth();
+}
+function setTrendRange(n){
+  trendRange = n;
+  renderMonth();
+}
+function updateModeButtons(){
+  ['whole','on','off'].forEach(mode=>{
+    const btn = document.getElementById('modeBtn-'+mode);
+    if(btn) btn.classList.toggle('active', historyMode===mode);
+  });
+  [6,12].forEach(n=>{
+    const btn = document.getElementById('rangeBtn-'+n);
+    if(btn) btn.classList.toggle('active', trendRange===n);
+  });
+  const modeLabel = historyMode==='whole' ? 'whole (on + off days)' : historyMode==='on' ? '— on days only' : '— off days only';
+  const modeLabel2 = historyMode==='whole' ? '' : historyMode==='on' ? '(on days only)' : '(off days only)';
+  const rangeLabel = trendRange===6 ? 'last 6 months' : 'last 12 months';
+  const el1 = document.getElementById('monthAvgModeLabel'); if(el1) el1.textContent = modeLabel2;
+  const el2 = document.getElementById('trendModeLabel'); if(el2) el2.textContent = `— ${rangeLabel}${modeLabel2 ? ' · ' + modeLabel2 : ''}`;
+}
+// Computes averages for one calendar month, optionally filtered to on-days or off-days only.
+// The calendar grid itself always shows every day regardless of this filter — only the
+// summary numbers/rings respect it, so you can flip between "how did I do overall" vs
+// "how did I do specifically on days I marked off" without losing sight of any day.
+function monthScores(y, m, mode){
+  const daysInMonth = new Date(y,m+1,0).getDate();
+  let dScores=[], fScores=[], pScores=[], overallScores=[], offDayCount=0;
+  for(let dnum=1; dnum<=daysInMonth; dnum++){
+    const dstr = `${y}-${String(m+1).padStart(2,'0')}-${String(dnum).padStart(2,'0')}`;
+    if(dstr > realToday) continue;
+    const dd = store.days[dstr];
+    const isOff = !!(dd && dd.offDay);
+    if(isOff) offDayCount++;
+    if(mode==='on' && isOff) continue;
+    if(mode==='off' && !isOff) continue;
+    const sc = dayCategoryScores(dd);
+    if(sc.d!==null) dScores.push(sc.d);
+    if(sc.f!==null) fScores.push(sc.f);
+    if(sc.p!==null) pScores.push(sc.p);
+    const scored = [sc.d,sc.f,sc.p].filter(v=>v!==null);
+    if(scored.length) overallScores.push(scored.reduce((a,b)=>a+b,0)/scored.length);
+  }
+  return {dScores, fScores, pScores, overallScores, offDayCount};
 }
 function tripleRingSVG(dScore, fScore, pScore, size){
   const cx = size/2, cy = size/2;
@@ -1402,31 +1518,33 @@ function renderMonth(){
   const dows = ['S','M','T','W','T','F','S'];
   let html = dows.map(d=>`<div class="dow">${d}</div>`).join('');
   for(let i=0;i<firstDow;i++) html += `<div></div>`;
-  let dScores=[], fScores=[], pScores=[], overallScores=[];
   for(let dnum=1; dnum<=daysInMonth; dnum++){
     const dstr = `${y}-${String(m+1).padStart(2,'0')}-${String(dnum).padStart(2,'0')}`;
     const isFuture = dstr > realToday;
     const sc = isFuture ? {d:null,f:null,p:null} : dayCategoryScores(store.days[dstr]);
-    if(!isFuture){
-      if(sc.d!==null) dScores.push(sc.d);
-      if(sc.f!==null) fScores.push(sc.f);
-      if(sc.p!==null) pScores.push(sc.p);
-      const scored = [sc.d,sc.f,sc.p].filter(v=>v!==null);
-      if(scored.length) overallScores.push(scored.reduce((a,b)=>a+b,0)/scored.length);
-    }
     const isToday = dstr === realToday;
-    html += `<div class="day-cell ${isToday?'today':''} ${isFuture?'future':''}" onclick="jumpToDateAndShow('${dstr}')">
+    const dd = store.days[dstr];
+    const hasNote = dd && dd.note;
+    const isOffDay = dd && dd.offDay;
+    html += `<div class="day-cell ${isToday?'today':''} ${isFuture?'future':''} ${isOffDay?'off-day':''}" onclick="jumpToDateAndShow('${dstr}')" title="${hasNote ? dd.note.replace(/"/g,'&quot;') : ''}">
       ${tripleRingSVG(sc.d, sc.f, sc.p, 26)}
       <span class="num">${dnum}</span>
+      <span style="display:flex;gap:2px;height:5px;">
+        ${hasNote ? '<span style="width:5px;height:5px;border-radius:50%;background:var(--marigold);"></span>' : ''}
+        ${isOffDay ? '<span style="width:5px;height:5px;border-radius:50%;background:var(--sky);"></span>' : ''}
+      </span>
     </div>`;
   }
   document.getElementById('monthGrid').innerHTML = html;
+
+  const {dScores, fScores, pScores, overallScores, offDayCount} = monthScores(y, m, historyMode);
   const avgD = avg(dScores), avgF = avg(fScores), avgP = avg(pScores);
   document.getElementById('monthSummary').innerHTML = kpiHtml([
     {v: dScores.length? Math.round(avgD*100)+'%':'–', l:'Avg Diet'},
     {v: fScores.length? Math.round(avgF*100)+'%':'–', l:'Avg Fitness'},
     {v: pScores.length? Math.round(avgP*100)+'%':'–', l:'Avg Productivity'},
     {v: new Set([...Object.keys(store.days)].filter(d=>d.slice(0,7)===`${y}-${String(m+1).padStart(2,'0')}`)).size, l:'Days logged'},
+    {v: offDayCount, l:'Off days'},
   ]);
   const emptyBucket = ()=>({Excelling:0,Hardworking:0,Surviving:0,Underperforming:0});
   const monthClassBuckets = { overall:emptyBucket(), diet:emptyBucket(), fitness:emptyBucket(), prod:emptyBucket() };
@@ -1442,6 +1560,39 @@ function renderMonth(){
   document.getElementById('monthClassBreakdown').innerHTML = [
     ['Overall','overall'],['Diet','diet'],['Fitness','fitness'],['Prod','prod']
   ].map(([label,key])=> classRow(label, monthClassBuckets[key])).join('');
+
+  // This month's average, as a large ring (mirrors the daily ring visual), respecting the on/off/whole toggle.
+  document.getElementById('monthAvgRingWrap').innerHTML = tripleRingSVG(
+    dScores.length?avgD:null, fScores.length?avgF:null, pScores.length?avgP:null, 150
+  );
+  document.getElementById('monthAvgPctDiet').textContent = dScores.length? Math.round(avgD*100)+'%' : '—';
+  document.getElementById('monthAvgPctFitness').textContent = fScores.length? Math.round(avgF*100)+'%' : '—';
+  document.getElementById('monthAvgPctProd').textContent = pScores.length? Math.round(avgP*100)+'%' : '—';
+
+  renderMonthTrend();
+  updateModeButtons();
+}
+// Multi-month trend: one small ring per month, going back `trendRange` months from the
+// currently viewed month, each respecting the same on/off/whole toggle as the ring above.
+function renderMonthTrend(){
+  const el = document.getElementById('trendRingRow');
+  if(!el) return;
+  const baseY = monthCursor.getFullYear(), baseM = monthCursor.getMonth();
+  const cells = [];
+  for(let i=trendRange-1; i>=0; i--){
+    const d = new Date(baseY, baseM - i, 1);
+    const y = d.getFullYear(), m = d.getMonth();
+    const {dScores, fScores, pScores} = monthScores(y, m, historyMode);
+    const avgD = dScores.length ? avg(dScores) : null;
+    const avgF = fScores.length ? avg(fScores) : null;
+    const avgP = pScores.length ? avg(pScores) : null;
+    const label = d.toLocaleDateString('en-IN', {month:'short', year:'2-digit'});
+    cells.push(`<div class="trend-month-cell">
+      ${tripleRingSVG(avgD, avgF, avgP, 70)}
+      <div class="lbl">${label}</div>
+    </div>`);
+  }
+  el.innerHTML = cells.join('');
 }
 
 function exportCSV(){
@@ -1538,13 +1689,6 @@ function exportExcel(){
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summaryRows), 'Monthly Summary');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(targetRows), 'Targets Reference');
   XLSX.writeFile(wb, 'rebuild-tracker-'+realToday+'.xlsx');
-}
-function exportJSON(){
-  const blob = new Blob([JSON.stringify(store, null, 2)], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'rebuild-tracker-backup-'+realToday+'.json';
-  a.click();
 }
 function importJSON(e){
   const file = e.target.files[0];
