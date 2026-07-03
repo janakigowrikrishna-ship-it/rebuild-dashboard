@@ -707,7 +707,7 @@ function switchDate(newDate){
   updateHeroLabel();
   refreshFormFields();
   renderAll();
-  syncTaskCounts();
+  refreshTaskCounts();
 }
 function jumpToDate(d){ switchDate(d); }
 
@@ -927,7 +927,11 @@ function renderTasks(){
   renderTaskGroup('study', 'taskListStudy');
   renderTaskGroup('other', 'taskListOther');
 }
-function syncTaskCounts(){
+function refreshTaskCounts(){
+  // Updates the displayed counts and in-memory day fields WITHOUT saving to Firestore.
+  // Safe to call on page load / date switch, before a remote sync has finished —
+  // calling saveStore() here risked overwriting real data with a blank starting
+  // state in the moment before the Firestore fetch completes.
   const tasks = currentTasks();
   const studyTasks = tasks.filter(t=>t.group==='study');
   const otherTasks = tasks.filter(t=>t.group==='other');
@@ -939,12 +943,14 @@ function syncTaskCounts(){
   document.getElementById('completedStudyVal').textContent = completedStudy;
   document.getElementById('plannedOtherVal').textContent = plannedOther;
   document.getElementById('completedOtherVal').textContent = completedOther;
-  // Tasks are now scoped to the selected date, so this always saves against
-  // whichever day is currently open — past days are no longer skipped.
   day.plannedStudy = plannedStudy; day.completedStudy = completedStudy;
   day.plannedOther = plannedOther; day.completedOther = completedOther;
-  saveStore();
   renderAll();
+}
+function syncTaskCounts(){
+  // Use this only for genuine user actions (add/toggle/delete a task) — it saves.
+  refreshTaskCounts();
+  saveStore();
 }
 
 function migrateLegacyTasks(){
@@ -1557,7 +1563,7 @@ async function initApp(){
   refreshFormFields();
   refreshTargetFields();
   renderAll();
-  syncTaskCounts();
+  refreshTaskCounts();
 
   if(firebaseReady && docRef){
     try{
@@ -1574,7 +1580,7 @@ async function initApp(){
           refreshFormFields();
           refreshTargetFields();
           renderAll();
-          syncTaskCounts();
+          refreshTaskCounts();
         }
       }
       setSyncStatus(navigator.onLine ? 'synced' : 'offline');
