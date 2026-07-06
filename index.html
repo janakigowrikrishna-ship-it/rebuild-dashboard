@@ -96,6 +96,20 @@ This typically indicates that your device does not have a healthy Internet conne
   .date-nav{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;}
   .date-nav input[type=date]{padding:8px 10px;border:1.5px solid var(--line);border-radius:10px;font-family:'Space Mono',monospace;font-size:13px;background:var(--surface);}
   .today-btn{background:var(--ink);color:#fff;border:none;padding:8px 14px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;}
+  #tabArrowLeft, #tabArrowRight{
+    position:fixed; top:50%; transform:translateY(-50%);
+    width:36px; height:56px; border:none; border-radius:10px;
+    background:rgba(43,36,30,0.12); color:var(--ink);
+    font-size:22px; line-height:1; cursor:pointer; z-index:40;
+    display:flex; align-items:center; justify-content:center;
+    transition:background 0.15s;
+  }
+  #tabArrowLeft:hover, #tabArrowRight:hover{ background:rgba(43,36,30,0.22); }
+  #tabArrowLeft{ left:6px; }
+  #tabArrowRight{ right:6px; }
+  @media (max-width: 640px){
+    #tabArrowLeft, #tabArrowRight{ width:28px; height:48px; font-size:18px; opacity:0.6; }
+  }
   .mode-btn{background:var(--bg);color:var(--muted);border:1.5px solid var(--line);padding:7px 14px;border-radius:999px;font-size:12.5px;font-weight:700;cursor:pointer;}
   .mode-btn.active{background:var(--ink);color:#fff;border-color:var(--ink);}
   .trend-month-cell{display:flex;flex-direction:column;align-items:center;gap:4px;width:78px;}
@@ -138,7 +152,7 @@ This typically indicates that your device does not have a healthy Internet conne
   .target-note .ln{display:inline-block;width:14px;height:2px;background:var(--ink);border-top:2px dashed var(--ink);}
 
   .field-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:8px;}
-  .field label{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em;}
+  .field label{display:flex;align-items:flex-end;min-height:28px;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em;}
   .field input[type=number],.field input[type=text]{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font-family:'Space Mono',monospace;font-size:15px;background:var(--bg);}
   .field input[type=number]:focus,.field input[type=text]:focus{outline:none;border-color:var(--coral);}
 
@@ -155,6 +169,7 @@ This typically indicates that your device does not have a healthy Internet conne
   .slider-row{display:flex;align-items:center;gap:14px;}
   input[type=range]{flex:1;accent-color:var(--teal);height:6px;}
   .slider-val{font-family:'Space Mono',monospace;font-weight:700;min-width:46px;text-align:right;}
+  .bold-input{border-width:2.5px !important; border-color:var(--ink) !important;}
 
   .stepper{display:flex;align-items:center;gap:10px;}
   .stepper button{width:34px;height:34px;border-radius:9px;border:1.5px solid var(--line);background:var(--bg);font-size:16px;cursor:pointer;font-weight:700;color:var(--ink);}
@@ -213,11 +228,13 @@ This typically indicates that your device does not have a healthy Internet conne
   .month-nav button{background:var(--bg);border:1.5px solid var(--line);border-radius:9px;width:30px;height:30px;font-size:14px;font-weight:700;cursor:pointer;color:var(--ink);}
   .month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
   .month-grid .dow{text-align:center;font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;padding-bottom:2px;}
-  .day-cell{display:flex;flex-direction:column;align-items:center;gap:2px;padding:2px 0;border-radius:9px;cursor:pointer;}
+  .day-cell{position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;padding:2px 0;border-radius:9px;cursor:pointer;}
   .day-cell:hover{background:var(--bg);}
   .day-cell.today .num{color:var(--coral);}
   .day-cell.future{opacity:.55;}
-  .day-cell .num{font-family:'Space Mono',monospace;font-size:9.5px;color:var(--muted);}
+  .day-cell.blurred{opacity:.25;filter:blur(1px);}
+  .day-cell .num{font-family:'Space Mono',monospace;font-size:9.5px;color:var(--muted);line-height:1;}
+  .day-cell .off-dot{width:5px;height:5px;border-radius:50%;background:var(--sky);}
   .month-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:var(--muted);}
   .month-legend .item{display:flex;align-items:center;gap:5px;}
   .month-legend .dot{width:8px;height:8px;border-radius:50%;}
@@ -229,6 +246,9 @@ This typically indicates that your device does not have a healthy Internet conne
 </style>
 </head>
 <body>
+<button id="tabArrowLeft" onclick="shiftTab(-1)" title="Previous tab" aria-label="Previous tab">&#8249;</button>
+<button id="tabArrowRight" onclick="shiftTab(1)" title="Next tab" aria-label="Next tab">&#8250;</button>
+
 <div class="wrap">
 
   <div class="card" id="setupBanner" style="display:none;background:var(--marigold-soft);border-color:var(--marigold);">
@@ -242,7 +262,9 @@ This typically indicates that your device does not have a healthy Internet conne
       <h1 id="greeting">Hi Janu</h1>
       <div class="date" id="todayDate"></div>
       <div class="date-nav">
+        <button class="today-btn" onclick="shiftDate(-1)" title="Previous day" aria-label="Previous day">‹ Day</button>
         <input type="date" id="dateSelector">
+        <button class="today-btn" onclick="shiftDate(1)" title="Next day" aria-label="Next day">Day ›</button>
         <button class="today-btn" onclick="jumpToDate(todayStr())">Jump to Today</button>
         <span class="editing-flag" id="editingFlag">Editing a past day</span>
       </div>
@@ -332,6 +354,28 @@ This typically indicates that your device does not have a healthy Internet conne
       <h2>Water trend</h2>
       <div class="chart-box"><canvas id="chartWater"></canvas></div>
     </div>
+    <div class="card" id="quickMealCard">
+      <h2>🍽️ Quick meal log</h2>
+      <p style="font-size:12.5px;color:var(--muted);margin:-6px 0 12px;">Log a meal the moment you eat it — it adds straight into today's totals above and clears itself. No need to remember everything at night.</p>
+      <div class="field-grid">
+        <div class="field"><label>Meal</label>
+          <select id="quickMealName">
+            <option value="Breakfast">Breakfast</option>
+            <option value="Lunch">Lunch</option>
+            <option value="Snack">Snack</option>
+            <option value="Dinner">Dinner</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="field"><label>Calories</label><input type="number" step="any" id="quick-calories" placeholder="0"></div>
+        <div class="field"><label>Protein (g)</label><input type="number" step="any" id="quick-protein" placeholder="0"></div>
+        <div class="field"><label>Carbs (g)</label><input type="number" step="any" id="quick-carbs" placeholder="0"></div>
+        <div class="field"><label>Fat (g)</label><input type="number" step="any" id="quick-fat" placeholder="0"></div>
+        <div class="field"><label>Fiber (g)</label><input type="number" step="any" id="quick-fiber" placeholder="0"></div>
+      </div>
+      <button class="save-btn" onclick="addQuickMeal()">Add to today's totals</button>
+      <span class="save-msg" id="msg-quickmeal">Added ✓</span>
+    </div>
   </div>
 
   <!-- FITNESS -->
@@ -356,12 +400,18 @@ This typically indicates that your device does not have a healthy Internet conne
     <div class="card">
       <h2>Sleep &amp; energy</h2>
       <div style="margin-bottom:16px;">
-        <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;">Sleep hours</label>
-        <div class="slider-row"><input type="range" id="in-sleep" min="0" max="12" step="0.5" value="7"><span class="slider-val mono" id="sleepVal">7.0</span></div>
+        <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;">Sleep</label>
+        <div class="slider-row" style="margin-top:6px;">
+          <input type="number" id="in-sleep-hours" min="0" max="12" step="1" placeholder="7" class="bold-input" style="width:70px;">
+          <span style="font-size:12px;color:var(--muted);">hrs</span>
+          <input type="number" id="in-sleep-mins" min="0" max="59" step="5" placeholder="0" class="bold-input" style="width:70px;">
+          <span style="font-size:12px;color:var(--muted);">mins</span>
+          <div id="sleepBar" style="flex:1;"></div>
+        </div>
       </div>
       <div>
-        <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;">Energy level</label>
-        <div class="slider-row"><input type="range" id="in-energy" min="1" max="5" step="1" value="3"><span class="slider-val mono" id="energyVal">3</span></div>
+        <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;">Energy level (out of 10)</label>
+        <div class="slider-row"><input type="range" id="in-energy" min="1" max="10" step="1" value="5"><span class="slider-val mono" id="energyVal">5</span></div>
       </div>
       <button class="save-btn teal" onclick="saveFitness()" style="margin-top:16px;">Save this day's fitness</button>
       <span class="save-msg" id="msg-fitness">Saved ✓</span>
@@ -454,13 +504,23 @@ This typically indicates that your device does not have a healthy Internet conne
         </div>
       </div>
     </div>
-    <div class="card">
-      <h2>Screen time</h2>
-      <div class="field-grid" style="max-width:220px;">
-        <div class="field"><label>Hours on phone</label><input type="number" step="0.1" id="in-screenHours" placeholder="0"></div>
+    <div class="two-col">
+      <div class="card">
+        <h2>Screen time</h2>
+        <div class="slider-row" style="margin-top:6px;">
+          <input type="number" id="in-screenHours-hours" min="0" max="18" step="1" placeholder="0" class="bold-input" style="width:70px;">
+          <span style="font-size:12px;color:var(--muted);">hrs</span>
+          <input type="number" id="in-screenHours-mins" min="0" max="59" step="5" placeholder="0" class="bold-input" style="width:70px;">
+          <span style="font-size:12px;color:var(--muted);">mins</span>
+        </div>
+        <div id="screenBar" style="margin-top:10px;"></div>
+        <button class="save-btn marigold" onclick="saveProductivity()" style="margin-top:12px;">Save this day's productivity</button>
+        <span class="save-msg" id="msg-prod">Saved ✓</span>
       </div>
-      <button class="save-btn marigold" onclick="saveProductivity()" style="margin-top:10px;">Save this day's productivity</button>
-      <span class="save-msg" id="msg-prod">Saved ✓</span>
+      <div class="card">
+        <h2>Screen time trend</h2>
+        <div class="chart-box"><canvas id="chartScreen"></canvas></div>
+      </div>
     </div>
     <div class="two-col">
       <div class="card">
@@ -471,10 +531,6 @@ This typically indicates that your device does not have a healthy Internet conne
         <h2>Other work completion %</h2>
         <div class="chart-box"><canvas id="chartOther"></canvas></div>
       </div>
-    </div>
-    <div class="card">
-      <h2>Screen time trend</h2>
-      <div class="chart-box"><canvas id="chartScreen"></canvas></div>
     </div>
   </div>
 
@@ -516,6 +572,7 @@ This typically indicates that your device does not have a healthy Internet conne
     <div class="card">
       <h2>History trend <span style="font-weight:400;color:var(--muted);font-size:13px;" id="trendModeLabel"></span></h2>
       <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <button class="mode-btn" id="rangeBtn-3" onclick="setTrendRange(3)">Last 3 months</button>
         <button class="mode-btn" id="rangeBtn-6" onclick="setTrendRange(6)">Last 6 months</button>
         <button class="mode-btn" id="rangeBtn-12" onclick="setTrendRange(12)">Last 12 months</button>
       </div>
@@ -528,6 +585,7 @@ This typically indicates that your device does not have a healthy Internet conne
     <div class="card">
       <h2>Your targets</h2>
       <div class="sub">This is the one place to set or change every target — the input pages stay clean and just track what you log.</div>
+      <div class="subhead">Calories &amp; macros</div>
       <div class="field-grid">
         <div class="field"><label>Calories — min (kcal)</label><input type="number" step="any" id="tgt-calories-min"></div>
         <div class="field"><label>Calories — target</label><input type="number" step="any" id="tgt-calories-target"></div>
@@ -543,13 +601,19 @@ This typically indicates that your device does not have a healthy Internet conne
         <div class="field"><label>Fiber — target</label><input type="number" step="any" id="tgt-fiber-target"></div>
         <div class="field"><label>Fiber — max (g)</label><input type="number" step="any" id="tgt-fiber-max"></div>
         <div class="field"><label>Water (L)</label><input type="number" step="0.1" id="tgt-water"></div>
+      </div>
+      <div class="subhead">Fitness &amp; sleep</div>
+      <div class="field-grid">
         <div class="field"><label>Calories burnt</label><input type="number" step="any" id="tgt-caloriesBurnt"></div>
         <div class="field"><label>Sleep — min (h)</label><input type="number" step="0.5" id="tgt-sleep-min"></div>
         <div class="field"><label>Sleep — target</label><input type="number" step="0.5" id="tgt-sleep-target"></div>
         <div class="field"><label>Sleep — max (h)</label><input type="number" step="0.5" id="tgt-sleep-max"></div>
-        <div class="field"><label>Screen time — ceiling (h)</label><input type="number" step="0.1" id="tgt-screenHours"></div>
         <div class="field"><label>Workouts/week</label><input type="number" id="tgt-workoutsPerWeek"></div>
         <div class="field"><label>Steps target</label><input type="number" id="tgt-steps"></div>
+      </div>
+      <div class="subhead">Productivity</div>
+      <div class="field-grid">
+        <div class="field"><label>Screen time — ceiling (h)</label><input type="number" step="0.1" id="tgt-screenHours"></div>
       </div>
       <div class="sub" style="margin:10px 0;">A day "in range" (between min and max) scores 100% for that item. Going under the min or over the max scores less the further out you are — this replaces a single perfect number with a healthy zone.</div>
       <button class="save-btn marigold" onclick="saveTargets()">Save targets</button>
@@ -791,21 +855,83 @@ const realToday = todayStr();
 let selectedDate = realToday;
 let day = {};
 
-document.querySelectorAll('.tab').forEach(t=>{
-  t.addEventListener('click', ()=>{
-    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
-    t.classList.add('active');
-    document.getElementById('panel-'+t.dataset.tab).classList.add('active');
-    if(t.dataset.tab==='month') renderMonth();
-    // Charts created while their tab panel was hidden (display:none) get 0 width/height
-    // from Chart.js and never draw anything, even after the tab becomes visible. Force
-    // every existing chart to recompute its now-visible size whenever any tab is opened.
-    requestAnimationFrame(()=>{
-      Object.values(charts).forEach(c=>{ if(c && typeof c.resize === 'function') c.resize(); });
-    });
+function activateTab(tabEl){
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  tabEl.classList.add('active');
+  document.getElementById('panel-'+tabEl.dataset.tab).classList.add('active');
+  if(tabEl.dataset.tab==='month') renderMonth();
+  // Charts created while their tab panel was hidden (display:none) get 0 width/height
+  // from Chart.js and never draw anything, even after the tab becomes visible. Force
+  // every existing chart to recompute its now-visible size whenever any tab is opened.
+  requestAnimationFrame(()=>{
+    Object.values(charts).forEach(c=>{ if(c && typeof c.resize === 'function') c.resize(); });
   });
+}
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click', ()=> activateTab(t));
 });
+
+// Left/right navigation between tabs — arrow buttons, keyboard arrows, and swipe.
+// Wraps around: past the last tab it goes back to the first, and vice versa.
+function shiftTab(delta){
+  const tabs = Array.from(document.querySelectorAll('.tab'));
+  const currentIndex = tabs.findIndex(t=>t.classList.contains('active'));
+  const nextIndex = (currentIndex + delta + tabs.length) % tabs.length;
+  activateTab(tabs[nextIndex]);
+}
+// Arrow keys should navigate tabs only when the person isn't actively typing —
+// otherwise pressing left/right inside a number field or dropdown would hijack
+// the cursor and jump the whole page to a different tab instead of moving it.
+function isTypingContext(el){
+  if(!el) return false;
+  const tag = el.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable;
+}
+document.addEventListener('keydown', (e)=>{
+  if(e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+  if(isTypingContext(document.activeElement)) return;
+  if(e.altKey || e.ctrlKey || e.metaKey) return;
+  shiftTab(e.key === 'ArrowRight' ? 1 : -1);
+});
+// Date moves on Up/Down rather than Left/Right, since Left/Right already switches
+// tabs — this keeps the two navigations from fighting over the same keys.
+function shiftDate(delta){
+  const d = new Date(selectedDate + 'T00:00:00');
+  d.setDate(d.getDate() + delta);
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  switchDate(`${y}-${m}-${day}`);
+}
+document.addEventListener('keydown', (e)=>{
+  if(e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+  if(isTypingContext(document.activeElement)) return;
+  if(e.altKey || e.ctrlKey || e.metaKey) return;
+  e.preventDefault(); // stop the page from scrolling on plain Up/Down
+  shiftDate(e.key === 'ArrowDown' ? 1 : -1);
+});
+// Touch swipe: require a mostly-horizontal, deliberate swipe so normal vertical
+// scrolling (reading charts, lists) is never mistaken for a tab-change gesture.
+(function setupSwipeNav(){
+  let startX = 0, startY = 0, tracking = false;
+  document.addEventListener('touchstart', (e)=>{
+    if(e.touches.length !== 1) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    tracking = true;
+  }, {passive:true});
+  document.addEventListener('touchend', (e)=>{
+    if(!tracking) return;
+    tracking = false;
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+    const SWIPE_THRESHOLD = 70;
+    if(Math.abs(dx) > SWIPE_THRESHOLD && Math.abs(dx) > Math.abs(dy) * 1.5){
+      shiftTab(dx < 0 ? 1 : -1);
+    }
+  }, {passive:true});
+})();
 
 const dateSelector = document.getElementById('dateSelector');
 dateSelector.value = selectedDate;
@@ -919,14 +1045,29 @@ function resetTargets(){
 function refreshFormFields(){
   document.getElementById('dayNote').value = day.note || '';
   document.getElementById('offDayToggle').checked = !!day.offDay;
-  ['calories','protein','carbs','fat','fiber','water','caloriesBurnt','screenHours','steps'].forEach(f=>{
+  ['calories','protein','carbs','fat','fiber','water','caloriesBurnt','steps'].forEach(f=>{
     const el = document.getElementById('in-'+f);
     el.value = day[f] !== undefined ? day[f] : '';
   });
-  document.getElementById('in-sleep').value = day.sleep ?? 7;
-  document.getElementById('sleepVal').textContent = (day.sleep ?? 7).toFixed(1);
-  document.getElementById('in-energy').value = day.energy ?? 3;
-  document.getElementById('energyVal').textContent = day.energy ?? 3;
+  {
+    const sleepDecimal = day.sleep ?? 7;
+    document.getElementById('in-sleep-hours').value = Math.floor(sleepDecimal);
+    document.getElementById('in-sleep-mins').value = Math.round((sleepDecimal % 1) * 60);
+    renderSleepBar();
+  }
+  {
+    const screenDecimal = day.screenHours;
+    if(screenDecimal === undefined){
+      document.getElementById('in-screenHours-hours').value = '';
+      document.getElementById('in-screenHours-mins').value = '';
+    } else {
+      document.getElementById('in-screenHours-hours').value = Math.floor(screenDecimal);
+      document.getElementById('in-screenHours-mins').value = Math.round((screenDecimal % 1) * 60);
+    }
+    renderScreenBar();
+  }
+  document.getElementById('in-energy').value = day.energy ?? 5;
+  document.getElementById('energyVal').textContent = day.energy ?? 5;
 
   document.getElementById('plannedStudyVal').textContent = day.plannedStudy ?? 0;
   document.getElementById('completedStudyVal').textContent = day.completedStudy ?? 0;
@@ -953,7 +1094,6 @@ function refreshFormFields(){
   document.getElementById('in-meMinutes').value = day.meMinutes ?? '';
 }
 
-document.getElementById('in-sleep').addEventListener('input', e=>{ document.getElementById('sleepVal').textContent = parseFloat(e.target.value).toFixed(1); });
 document.getElementById('in-energy').addEventListener('input', e=>{ document.getElementById('energyVal').textContent = e.target.value; });
 
 function step(field, delta){
@@ -966,6 +1106,30 @@ function flashMsg(id){
   m.style.display='inline';
   setTimeout(()=>m.style.display='none', 1800);
 }
+// In-memory only for this session — deliberately not persisted, since once a
+// meal's numbers are folded into the day's totals there's nothing left to
+function addQuickMeal(){
+  const fields = ['calories','protein','carbs','fat','fiber'];
+  const quickVals = {};
+  let hasAny = false;
+  fields.forEach(f=>{
+    const raw = document.getElementById('quick-'+f).value;
+    const n = raw === '' ? 0 : Number(raw);
+    quickVals[f] = n;
+    if(raw !== '' && n !== 0) hasAny = true;
+  });
+  if(!hasAny){ return; }
+  fields.forEach(f=>{
+    const current = document.getElementById('in-'+f).value;
+    const currentNum = current === '' ? 0 : Number(current);
+    document.getElementById('in-'+f).value = currentNum + quickVals[f];
+  });
+  saveDiet();
+  // Clear the quick-entry fields — this data has nowhere else to live now
+  // that it's folded into the day's real totals.
+  fields.forEach(f=> document.getElementById('quick-'+f).value = '');
+  flashMsg('msg-quickmeal');
+}
 function saveDiet(){
   ['calories','protein','carbs','fat','fiber','water'].forEach(f=>{
     const v = document.getElementById('in-'+f).value;
@@ -974,7 +1138,11 @@ function saveDiet(){
   saveStore(); renderAll(); flashMsg('msg-diet');
 }
 function saveFitness(){
-  day.sleep = Number(document.getElementById('in-sleep').value);
+  const sh = document.getElementById('in-sleep-hours').value;
+  const sm = document.getElementById('in-sleep-mins').value;
+  const sleepHours = sh === '' ? 0 : Number(sh);
+  const sleepMins = sm === '' ? 0 : Number(sm);
+  day.sleep = sleepHours + (sleepMins / 60);
   day.energy = Number(document.getElementById('in-energy').value);
   const cb = document.getElementById('in-caloriesBurnt').value;
   day.caloriesBurnt = cb === '' ? undefined : Number(cb);
@@ -1014,8 +1182,15 @@ function saveOffDay(){
   renderMonth();
 }
 function saveProductivity(){
-  const sh = document.getElementById('in-screenHours').value;
-  day.screenHours = sh === '' ? undefined : Number(sh);
+  const sh = document.getElementById('in-screenHours-hours').value;
+  const sm = document.getElementById('in-screenHours-mins').value;
+  if(sh === '' && sm === ''){
+    day.screenHours = undefined;
+  } else {
+    const hrs = sh === '' ? 0 : Number(sh);
+    const mins = sm === '' ? 0 : Number(sm);
+    day.screenHours = hrs + (mins / 60);
+  }
   saveStore(); renderAll(); flashMsg('msg-prod');
 }
 
@@ -1200,6 +1375,46 @@ function renderDietBars(){
     return `<div class="pbar-row"><span style="width:60px;">${b.label}</span><div class="pbar-track"><div class="pbar-fill" style="width:${pct}%;background:${b.color};"></div></div><span class="mono" style="width:78px;text-align:right;">${b.val}/${b.target}</span></div>`;
   }).join('');
 }
+// Sleep bar mirrors the diet-macro bar styling so the Fitness tab reads as one
+// consistent visual language instead of numbers-with-a-slider-somewhere-else.
+function renderSleepBar(){
+  const el = document.getElementById('sleepBar');
+  if(!el) return;
+  const hrs = Number(document.getElementById('in-sleep-hours').value) || 0;
+  const mins = Number(document.getElementById('in-sleep-mins').value) || 0;
+  const val = hrs + mins/60;
+  const { min, max } = TARGETS.sleep;
+  // Use max as the scale ceiling so a full bar means "at your max" — going past
+  // it is exactly what we want to flag as oversleeping, via color rather than
+  // an ever-growing bar that would otherwise just look "more filled = better."
+  const pct = Math.min(100, Math.round((val/max)*100));
+  let color;
+  if(val > max) color = 'var(--coral)';       // oversleeping
+  else if(val < min) color = 'var(--marigold)'; // still short of your range
+  else color = 'var(--teal)';                  // in your healthy range
+  el.innerHTML = `<div class="pbar-track"><div class="pbar-fill" style="width:${pct}%;background:${color};"></div></div>`;
+}
+// Screen time is "lower is better" — the bar fills toward the ceiling and
+// turns coral if you've gone over it, instead of implying more is good.
+function renderScreenBar(){
+  const el = document.getElementById('screenBar');
+  if(!el) return;
+  const hEl = document.getElementById('in-screenHours-hours');
+  const mEl = document.getElementById('in-screenHours-mins');
+  const hrs = Number(hEl.value) || 0;
+  const mins = Number(mEl.value) || 0;
+  if(hEl.value === '' && mEl.value === ''){ el.innerHTML = ''; return; }
+  const val = hrs + mins/60;
+  const target = TARGETS.screenHours;
+  const pct = Math.min(100, Math.round((val/target)*100));
+  const over = val > target;
+  const color = over ? 'var(--coral)' : 'var(--marigold)';
+  el.innerHTML = `<div class="pbar-track"><div class="pbar-fill" style="width:${pct}%;background:${color};"></div></div>`;
+}
+document.getElementById('in-sleep-hours').addEventListener('input', renderSleepBar);
+document.getElementById('in-sleep-mins').addEventListener('input', renderSleepBar);
+document.getElementById('in-screenHours-hours').addEventListener('input', renderScreenBar);
+document.getElementById('in-screenHours-mins').addEventListener('input', renderScreenBar);
 
 function classifyPct(pct){
   if(pct === null) return null;
@@ -1299,7 +1514,7 @@ function renderCalorieChart(){
     type:'line',
     data:{ labels: days.map(d=>d.slice(5)),
       datasets:[{label:'Calories', data: days.map(d=>store.days[d].calories ?? null), borderColor:'#FF5940', backgroundColor:'#FFDFD6', fill:true, spanGaps:true, tension:.3}]},
-    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{ticks:chartFont}, y:{min:0, suggestedMax:axisMaxFor(TARGETS.calories.max), ticks:chartFont}}}
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, annotation:targetLineOpts(TARGETS.calories.target, '#FF5940')}, scales:{x:{ticks:chartFont}, y:{min:0, suggestedMax:axisMaxFor(TARGETS.calories.max), ticks:chartFont}}}
   });
 }
 function renderProteinChart(){
@@ -1309,7 +1524,7 @@ function renderProteinChart(){
     type:'line',
     data:{ labels: days.map(d=>d.slice(5)),
       datasets:[{label:'Protein (g)', data: days.map(d=>store.days[d].protein ?? null), borderColor:'#0FA396', backgroundColor:'#CFF3EC', fill:true, spanGaps:true, tension:.3}]},
-    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{ticks:chartFont}, y:{min:0, suggestedMax:axisMaxFor(TARGETS.protein), ticks:chartFont}}}
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, annotation:targetLineOpts(TARGETS.protein, '#0FA396')}, scales:{x:{ticks:chartFont}, y:{min:0, suggestedMax:axisMaxFor(TARGETS.protein), ticks:chartFont}}}
   });
 }
 function renderWaterChart(){
@@ -1319,7 +1534,7 @@ function renderWaterChart(){
     type:'line',
     data:{ labels: days.map(d=>d.slice(5)),
       datasets:[{label:'Water (L)', data: days.map(d=>store.days[d].water ?? null), borderColor:'#2E9BE0', backgroundColor:'#D6EDFB', fill:true, spanGaps:true, tension:.3}]},
-    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{ticks:chartFont}, y:{min:0, suggestedMax:axisMaxFor(TARGETS.water), ticks:chartFont}}}
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, annotation:targetLineOpts(TARGETS.water, '#2E9BE0')}, scales:{x:{ticks:chartFont}, y:{min:0, suggestedMax:axisMaxFor(TARGETS.water), ticks:chartFont}}}
   });
 }
 function renderSleepChart(){
@@ -1329,7 +1544,7 @@ function renderSleepChart(){
     type:'line',
     data:{ labels: days.map(d=>d.slice(5)),
       datasets:[{label:'Sleep (hrs)', data: days.map(d=>store.days[d].sleep ?? null), borderColor:'#0FA396', backgroundColor:'#CFF3EC', fill:true, spanGaps:true, tension:.3}]},
-    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{ticks:chartFont}, y:{min:0, suggestedMax:axisMaxFor(TARGETS.sleep.max), ticks:chartFont}}}
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, annotation:targetLineOpts(TARGETS.sleep.target, '#0FA396')}, scales:{x:{ticks:chartFont}, y:{min:0, suggestedMax:axisMaxFor(TARGETS.sleep.max), ticks:chartFont}}}
   });
 }
 function renderBurntChart(){
@@ -1339,7 +1554,7 @@ function renderBurntChart(){
     type:'line',
     data:{ labels: days.map(d=>d.slice(5)),
       datasets:[{label:'Calories burnt', data: days.map(d=>store.days[d].caloriesBurnt ?? null), borderColor:'#FF5940', backgroundColor:'#FFDFD6', fill:true, spanGaps:true, tension:.3}]},
-    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{ticks:chartFont}, y:{min:0, suggestedMax:axisMaxFor(TARGETS.caloriesBurnt), ticks:chartFont}}}
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, annotation:targetLineOpts(TARGETS.caloriesBurnt, '#FF5940')}, scales:{x:{ticks:chartFont}, y:{min:0, suggestedMax:axisMaxFor(TARGETS.caloriesBurnt), ticks:chartFont}}}
   });
 }
 function renderStepsChart(){
@@ -1349,7 +1564,7 @@ function renderStepsChart(){
     type:'line',
     data:{ labels: days.map(d=>d.slice(5)),
       datasets:[{label:'Steps', data: days.map(d=>store.days[d].steps ?? null), borderColor:'#B15FDB', backgroundColor:'#F1DFF9', fill:true, spanGaps:true, tension:.3}]},
-    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{ticks:chartFont}, y:{min:0, suggestedMax:axisMaxFor(TARGETS.steps), ticks:chartFont}}}
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, annotation:targetLineOpts(TARGETS.steps, '#B15FDB')}, scales:{x:{ticks:chartFont}, y:{min:0, suggestedMax:axisMaxFor(TARGETS.steps), ticks:chartFont}}}
   });
 }
 function renderWorkoutChart(){
@@ -1387,7 +1602,7 @@ function renderScreenChart(){
     type:'bar',
     data:{ labels: days.map(d=>d.slice(5)),
       datasets:[{label:'Hours on phone', data: days.map(d=>store.days[d].screenHours ?? null), backgroundColor:'#B15FDB', borderRadius:5}]},
-    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{ticks:chartFont}, y:{min:0, suggestedMax:axisMaxFor(TARGETS.screenHours), ticks:chartFont}}}
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, annotation:targetLineOpts(TARGETS.screenHours, '#B15FDB')}, scales:{x:{ticks:chartFont}, y:{min:0, suggestedMax:axisMaxFor(TARGETS.screenHours), ticks:chartFont}}}
   });
 }
 
@@ -1451,7 +1666,7 @@ function jumpToDateAndShow(d){
 /* ---- Month completion-ring view ---- */
 let monthCursor = new Date(realToday+'T00:00:00');
 monthCursor.setDate(1);
-let historyMode = 'whole'; // 'whole' | 'on' | 'off' — filters the averages, never the calendar cells themselves
+let historyMode = 'whole'; // 'whole' | 'on' | 'off' — filters the averages, and blurs out non-matching days on the calendar
 let trendRange = 6; // 6 or 12 months
 function shiftMonth(delta){
   monthCursor.setMonth(monthCursor.getMonth()+delta);
@@ -1470,20 +1685,20 @@ function updateModeButtons(){
     const btn = document.getElementById('modeBtn-'+mode);
     if(btn) btn.classList.toggle('active', historyMode===mode);
   });
-  [6,12].forEach(n=>{
+  [3,6,12].forEach(n=>{
     const btn = document.getElementById('rangeBtn-'+n);
     if(btn) btn.classList.toggle('active', trendRange===n);
   });
   const modeLabel = historyMode==='whole' ? 'whole (on + off days)' : historyMode==='on' ? '— on days only' : '— off days only';
   const modeLabel2 = historyMode==='whole' ? '' : historyMode==='on' ? '(on days only)' : '(off days only)';
-  const rangeLabel = trendRange===6 ? 'last 6 months' : 'last 12 months';
+  const rangeLabel = `last ${trendRange} months`;
   const el1 = document.getElementById('monthAvgModeLabel'); if(el1) el1.textContent = modeLabel2;
   const el2 = document.getElementById('trendModeLabel'); if(el2) el2.textContent = `— ${rangeLabel}${modeLabel2 ? ' · ' + modeLabel2 : ''}`;
 }
 // Computes averages for one calendar month, optionally filtered to on-days or off-days only.
-// The calendar grid itself always shows every day regardless of this filter — only the
-// summary numbers/rings respect it, so you can flip between "how did I do overall" vs
-// "how did I do specifically on days I marked off" without losing sight of any day.
+// The calendar grid always shows every day (nothing is hidden) — days outside the
+// current filter are just blurred out visually, so you can flip between "how did
+// I do overall" vs "how did I do on days I marked off" without losing any day.
 function monthScores(y, m, mode){
   const daysInMonth = new Date(y,m+1,0).getDate();
   let dScores=[], fScores=[], pScores=[], overallScores=[], offDayCount=0;
@@ -1537,13 +1752,17 @@ function renderMonth(){
     const dd = store.days[dstr];
     const hasNote = dd && dd.note;
     const isOffDay = dd && dd.offDay;
-    html += `<div class="day-cell ${isToday?'today':''} ${isFuture?'future':''} ${isOffDay?'off-day':''}" onclick="jumpToDateAndShow('${dstr}')" title="${hasNote ? dd.note.replace(/"/g,'&quot;') : ''}">
+    // The selected On/Off/Whole mode doesn't just filter the averages above —
+    // it also visually de-emphasizes whichever days aren't part of the current
+    // view, so the calendar itself reflects what you're currently looking at.
+    const shouldBlur = !isFuture && (
+      (historyMode === 'on' && isOffDay) ||
+      (historyMode === 'off' && !isOffDay)
+    );
+    html += `<div class="day-cell ${isToday?'today':''} ${isFuture?'future':''} ${shouldBlur?'blurred':''}" onclick="jumpToDateAndShow('${dstr}')" title="${hasNote ? dd.note.replace(/"/g,'&quot;') : ''}">
       ${tripleRingSVG(sc.d, sc.f, sc.p, 26)}
       <span class="num">${dnum}</span>
-      <span style="display:flex;gap:2px;height:5px;">
-        ${hasNote ? '<span style="width:5px;height:5px;border-radius:50%;background:var(--marigold);"></span>' : ''}
-        ${isOffDay ? '<span style="width:5px;height:5px;border-radius:50%;background:var(--sky);"></span>' : ''}
-      </span>
+      <span class="off-dot" style="visibility:${isOffDay ? 'visible' : 'hidden'};"></span>
     </div>`;
   }
   document.getElementById('monthGrid').innerHTML = html;
