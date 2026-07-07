@@ -195,7 +195,7 @@ This typically indicates that your device does not have a healthy Internet conne
   .task-add input[type=text]{flex:1;min-width:140px;padding:8px 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13px;background:var(--bg);}
   .task-add select{padding:8px;border-radius:9px;border:1.5px solid var(--line);background:var(--bg);font-size:12.5px;}
   .task-add button{background:var(--marigold);border:none;border-radius:9px;padding:0 16px;font-weight:700;cursor:pointer;color:#3a2a00;}
-  .task-item{display:flex;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid var(--line);}
+  .task-item{display:flex;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid var(--line);flex-wrap:wrap;}
   .task-item:last-child{border-bottom:none;}
   .task-item input[type=checkbox]{width:17px;height:17px;accent-color:var(--marigold);cursor:pointer;}
   .task-item .txt{flex:1;font-size:13px;}
@@ -483,6 +483,15 @@ This typically indicates that your device does not have a healthy Internet conne
         <h2>Study &amp; Office</h2>
         <div class="task-add">
           <input type="text" id="newTaskTextStudy" placeholder="Add a study/office task…" onkeydown="if(event.key==='Enter')addTask('study')">
+          <select id="repeatStudy" onchange="onRepeatChange('study')" style="max-width:120px;">
+            <option value="none">Doesn't repeat</option>
+            <option value="daily">Every day</option>
+            <option value="every_n" data-n="2">Every 2 days</option>
+            <option value="weekly">Every week</option>
+            <option value="monthly">Every month</option>
+            <option value="custom">Custom…</option>
+          </select>
+          <input type="number" id="repeatCustomStudy" min="1" step="1" placeholder="days" style="display:none;width:64px;">
           <button onclick="addTask('study')">Add</button>
         </div>
         <div id="taskListStudy"></div>
@@ -495,6 +504,15 @@ This typically indicates that your device does not have a healthy Internet conne
         <h2>Other Work</h2>
         <div class="task-add">
           <input type="text" id="newTaskTextOther" placeholder="Add another-work task…" onkeydown="if(event.key==='Enter')addTask('other')">
+          <select id="repeatOther" onchange="onRepeatChange('other')" style="max-width:120px;">
+            <option value="none">Doesn't repeat</option>
+            <option value="daily">Every day</option>
+            <option value="every_n" data-n="2">Every 2 days</option>
+            <option value="weekly">Every week</option>
+            <option value="monthly">Every month</option>
+            <option value="custom">Custom…</option>
+          </select>
+          <input type="number" id="repeatCustomOther" min="1" step="1" placeholder="days" style="display:none;width:64px;">
           <button onclick="addTask('other')">Add</button>
         </div>
         <div id="taskListOther"></div>
@@ -503,6 +521,11 @@ This typically indicates that your device does not have a healthy Internet conne
           <div><label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;">Completed</label><div class="val" id="completedOtherVal" style="font-family:'Space Mono',monospace;font-size:20px;">0</div></div>
         </div>
       </div>
+    </div>
+    <div class="card">
+      <h2>🔁 Recurring tasks</h2>
+      <p style="font-size:12.5px;color:var(--muted);margin:-6px 0 12px;">Tasks that repeat automatically appear on their due dates without you re-typing them. Stop one here and it won't generate any further — days it already created stay as they are.</p>
+      <div id="recurringList"></div>
     </div>
     <div class="two-col">
       <div class="card">
@@ -1194,19 +1217,136 @@ function saveProductivity(){
   saveStore(); renderAll(); flashMsg('msg-prod');
 }
 
+// ---- Recurring tasks ----
+// Design: a recurring task is a lightweight "template" (store.recurringTemplates)
+// plus concrete task instances materialized forward into store.tasksByDate for
+// each due date, tagged with recurringId. This keeps every existing task
+// feature (toggle, delete, counts, move) working unmodified on each instance —
+// a recurring task instance IS a normal task, just tagged with where it came from.
+function daysInMonthOf(y, m){ return new Date(y, m+1, 0).getDate(); }
+function isDueOn(tpl, dateStr){
+  if(dateStr < tpl.startDate) return false;
+  const start = new Date(tpl.startDate+'T00:00:00');
+  const d = new Date(dateStr+'T00:00:00');
+  const diffDays = Math.round((d - start) / 86400000);
+  if(tpl.freq === 'daily') return true;
+  if(tpl.freq === 'every_n' || tpl.freq === 'custom') return diffDays % tpl.interval === 0;
+  if(tpl.freq === 'weekly') return diffDays % 7 === 0;
+  if(tpl.freq === 'monthly'){
+    const startDay = start.getDate();
+    const dLast = daysInMonthOf(d.getFullYear(), d.getMonth());
+    // Same day-of-month as the start date; if the start day doesn't exist in a
+    // shorter month (e.g. started on the 31st), fall back to that month's last day.
+    return d.getDate() === Math.min(startDay, dLast);
+  }
+  return false;
+}
+function isSkipped(templateId, dateStr){
+  return !!(store.recurringSkips && store.recurringSkips[templateId] && store.recurringSkips[templateId].includes(dateStr));
+}
+function markSkipped(templateId, dateStr){
+  if(!store.recurringSkips) store.recurringSkips = {};
+  if(!store.recurringSkips[templateId]) store.recurringSkips[templateId] = [];
+  if(!store.recurringSkips[templateId].includes(dateStr)) store.recurringSkips[templateId].push(dateStr);
+}
+// Generates concrete task instances for every active template, forward from
+// today out to a fixed window. Idempotent — safe to call as often as needed;
+// it only ever adds a missing instance, never duplicates or removes one.
+function materializeRecurringTasks(){
+  if(!store.recurringTemplates) store.recurringTemplates = [];
+  if(!store.tasksByDate) store.tasksByDate = {};
+  const WINDOW_DAYS = 60;
+  let changed = false;
+  const startScan = new Date(realToday+'T00:00:00');
+  store.recurringTemplates.filter(t=>t.active).forEach(tpl=>{
+    for(let i=0; i<=WINDOW_DAYS; i++){
+      const d = new Date(startScan);
+      d.setDate(d.getDate()+i);
+      const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
+      const dstr = `${y}-${m}-${dd}`;
+      if(!isDueOn(tpl, dstr)) continue;
+      if(isSkipped(tpl.id, dstr)) continue;
+      if(!store.tasksByDate[dstr]) store.tasksByDate[dstr] = [];
+      const alreadyExists = store.tasksByDate[dstr].some(t=>t.recurringId===tpl.id);
+      if(alreadyExists) continue;
+      store.tasksByDate[dstr].push({id:Date.now()+Math.random(), text:tpl.text, group:tpl.group, done:false, recurringId:tpl.id});
+      changed = true;
+    }
+  });
+  return changed;
+}
+function stopRecurring(templateId){
+  const tpl = (store.recurringTemplates||[]).find(t=>t.id===templateId);
+  if(!tpl) return;
+  tpl.active = false;
+  // Remove not-yet-done future instances this template already generated —
+  // stopping should feel immediate, not leave a trail of pre-made future tasks.
+  Object.keys(store.tasksByDate).forEach(dstr=>{
+    if(dstr <= realToday) return;
+    store.tasksByDate[dstr] = store.tasksByDate[dstr].filter(t=> !(t.recurringId===templateId && !t.done));
+  });
+  saveStore();
+  renderTasks();
+  renderRecurringList();
+  syncTaskCounts();
+}
+function renderRecurringList(){
+  const el = document.getElementById('recurringList');
+  if(!el) return;
+  const templates = (store.recurringTemplates||[]).filter(t=>t.active);
+  if(templates.length===0){ el.innerHTML = '<div class="hist-empty">No recurring tasks yet — set one using the "Repeats" option when adding a task above.</div>'; return; }
+  const freqLabel = tpl => {
+    if(tpl.freq==='daily') return 'Every day';
+    if(tpl.freq==='weekly') return 'Every week';
+    if(tpl.freq==='monthly') return 'Every month';
+    return `Every ${tpl.interval} days`;
+  };
+  el.innerHTML = templates.map(tpl=>`
+    <div class="task-item">
+      <span class="txt">🔁 ${tpl.text}</span>
+      <span class="cat">${tpl.group==='study'?'Study/Office':'Other Work'} · ${freqLabel(tpl)}</span>
+      <button class="del" onclick="stopRecurring(${tpl.id})" title="Stop repeating">Stop</button>
+    </div>`).join('');
+}
 function currentTasks(){
   if(!store.tasksByDate) store.tasksByDate = {};
   if(!store.tasksByDate[selectedDate]) store.tasksByDate[selectedDate] = [];
   return store.tasksByDate[selectedDate];
+}
+function onRepeatChange(group){
+  const select = document.getElementById('repeat'+(group==='study'?'Study':'Other'));
+  const customInput = document.getElementById('repeatCustom'+(group==='study'?'Study':'Other'));
+  customInput.style.display = select.value==='custom' ? 'inline-block' : 'none';
 }
 function addTask(group){
   const inputId = group==='study' ? 'newTaskTextStudy' : 'newTaskTextOther';
   const input = document.getElementById(inputId);
   const txt = input.value.trim();
   if(!txt) return;
-  currentTasks().push({id:Date.now(), text:txt, group, done:false});
+  const repeatSelect = document.getElementById('repeat'+(group==='study'?'Study':'Other'));
+  const repeatVal = repeatSelect.value;
+  const newTask = {id:Date.now(), text:txt, group, done:false};
+  if(repeatVal !== 'none'){
+    if(!store.recurringTemplates) store.recurringTemplates = [];
+    let freq = repeatVal, interval = null;
+    if(repeatVal === 'every_n'){ interval = 2; }
+    if(repeatVal === 'custom'){
+      const customInput = document.getElementById('repeatCustom'+(group==='study'?'Study':'Other'));
+      const n = Number(customInput.value);
+      interval = (n && n > 0) ? n : 1;
+      freq = 'custom';
+      customInput.value = '';
+    }
+    const tplId = Date.now()+Math.random();
+    store.recurringTemplates.push({id: tplId, text: txt, group, freq, interval, startDate: selectedDate, active: true});
+    newTask.recurringId = tplId;
+    repeatSelect.value = 'none';
+    onRepeatChange(group);
+  }
+  currentTasks().push(newTask);
   input.value='';
-  saveStore(); renderTasks(); syncTaskCounts();
+  materializeRecurringTasks();
+  saveStore(); renderTasks(); syncTaskCounts(); renderRecurringList();
 }
 function toggleTask(id){
   const t = currentTasks().find(x=>x.id===id);
@@ -1214,18 +1354,57 @@ function toggleTask(id){
   saveStore(); renderTasks(); syncTaskCounts();
 }
 function deleteTask(id){
+  const t = currentTasks().find(x=>x.id===id);
+  if(t && t.recurringId) markSkipped(t.recurringId, selectedDate);
   store.tasksByDate[selectedDate] = currentTasks().filter(x=>x.id!==id);
   saveStore(); renderTasks(); syncTaskCounts();
+}
+// Moves an unfinished task to another date. If it was a recurring instance,
+// its original due date is marked as skipped (so the series won't regenerate
+// a duplicate there) and the moved copy becomes a standalone task at the new
+// date — the recurring series itself continues on its normal schedule.
+function moveTask(id, targetDate){
+  const t = currentTasks().find(x=>x.id===id);
+  if(!t) return;
+  if(t.recurringId) markSkipped(t.recurringId, selectedDate);
+  store.tasksByDate[selectedDate] = currentTasks().filter(x=>x.id!==id);
+  if(!store.tasksByDate[targetDate]) store.tasksByDate[targetDate] = [];
+  store.tasksByDate[targetDate].push({id:Date.now()+Math.random(), text:t.text, group:t.group, done:false});
+  saveStore(); renderTasks(); syncTaskCounts();
+}
+function moveTaskToTomorrow(id){
+  const d = new Date(selectedDate+'T00:00:00');
+  d.setDate(d.getDate()+1);
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0');
+  moveTask(id, `${y}-${m}-${dd}`);
+}
+function toggleMoveDatePicker(id){
+  const row = document.getElementById('movePick-'+id);
+  if(row) row.style.display = row.style.display==='none' ? 'flex' : 'none';
+}
+function confirmMoveToDate(id){
+  const input = document.getElementById('moveDateInput-'+id);
+  if(!input.value) return;
+  moveTask(id, input.value);
 }
 function renderTaskGroup(group, elId){
   const el = document.getElementById(elId);
   const list = currentTasks().filter(t=>t.group===group);
   if(list.length===0){ el.innerHTML = '<div class="hist-empty">No tasks yet — add your first one above.</div>'; return; }
+  const tomorrow = (()=>{ const d=new Date(selectedDate+'T00:00:00'); d.setDate(d.getDate()+1); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
   el.innerHTML = list.slice().reverse().map(t=>`
     <div class="task-item ${t.done?'done':''}">
       <input type="checkbox" ${t.done?'checked':''} onchange="toggleTask(${t.id})">
-      <span class="txt">${t.text}</span>
+      <span class="txt">${t.recurringId ? '🔁 ' : ''}${t.text}</span>
+      ${!t.done ? `
+        <button class="del" onclick="moveTaskToTomorrow(${t.id})" title="Move to tomorrow">→ Tmrw</button>
+        <button class="del" onclick="toggleMoveDatePicker(${t.id})" title="Move to a specific date">📅</button>
+      ` : ''}
       <button class="del" onclick="deleteTask(${t.id})">✕</button>
+      <div id="movePick-${t.id}" style="display:none;width:100%;gap:8px;align-items:center;margin-top:4px;">
+        <input type="date" id="moveDateInput-${t.id}" value="${tomorrow}" style="padding:6px 8px;border:1.5px solid var(--line);border-radius:8px;font-size:12px;">
+        <button class="del" onclick="confirmMoveToDate(${t.id})">Move</button>
+      </div>
     </div>`).join('');
 }
 function renderTasks(){
@@ -1994,6 +2173,7 @@ async function initApp(){
   syncTargetsFromStore();
   if(!store.days[selectedDate]) store.days[selectedDate] = {};
   day = store.days[selectedDate];
+  if(materializeRecurringTasks()) saveLocalCache();
 
   dateSelector.value = selectedDate;
 
@@ -2002,6 +2182,7 @@ async function initApp(){
   refreshTargetFields();
   renderAll();
   refreshTaskCounts();
+  renderRecurringList();
 
   if(firebaseReady && docRef){
     try{
@@ -2014,11 +2195,13 @@ async function initApp(){
           syncTargetsFromStore();
           if(!store.days[selectedDate]) store.days[selectedDate] = {};
           day = store.days[selectedDate];
+          materializeRecurringTasks();
           saveLocalCache();
           refreshFormFields();
           refreshTargetFields();
           renderAll();
           refreshTaskCounts();
+          renderRecurringList();
         }
       }
       setSyncStatus(navigator.onLine ? 'synced' : 'offline');
