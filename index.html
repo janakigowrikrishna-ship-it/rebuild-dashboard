@@ -251,11 +251,6 @@ This typically indicates that your device does not have a healthy Internet conne
 
 <div class="wrap">
 
-  <div class="card" id="setupBanner" style="display:none;background:var(--marigold-soft);border-color:var(--marigold);">
-    <h2 style="font-size:16px;">⚠️ Sync isn't set up yet</h2>
-    <div class="sub" style="margin-bottom:0;">This file needs your free Firebase config pasted in before it can sync. Open the file in a text editor, find the <span class="mono">FIREBASE_CONFIG</span> block near the top of the script, and paste in the values from your Firebase project (see the setup steps I gave you). Until then, everything still works and saves — just on this device only.</div>
-  </div>
-
   <div class="hero">
     <div class="hero-text">
       <div class="eyebrow">Rebuild — Daily Dashboard</div>
@@ -314,6 +309,7 @@ This typically indicates that your device does not have a healthy Internet conne
     <div class="tab" data-tab="productivity">Productivity</div>
     <div class="tab" data-tab="month">History</div>
     <div class="tab" data-tab="trends">Trends</div>
+    <div class="tab" data-tab="guide">Guide</div>
   </div>
 
   <!-- DIET -->
@@ -356,7 +352,6 @@ This typically indicates that your device does not have a healthy Internet conne
     </div>
     <div class="card" id="quickMealCard">
       <h2>🍽️ Quick meal log</h2>
-      <p style="font-size:12.5px;color:var(--muted);margin:-6px 0 12px;">Log a meal the moment you eat it — it adds straight into today's totals above and clears itself. No need to remember everything at night.</p>
       <div class="field-grid">
         <div class="field"><label>Meal</label>
           <select id="quickMealName">
@@ -438,7 +433,6 @@ This typically indicates that your device does not have a healthy Internet conne
 
   <!-- RESET -->
   <div class="panel" id="panel-reset">
-    <div class="sub" style="margin:-4px 0 14px;">This tab is just for you to see — nothing here feeds a score or ring. Log what happened, no pressure.</div>
     <div class="card">
       <h2>Phone curfew</h2>
       <div class="chip-row">
@@ -524,7 +518,6 @@ This typically indicates that your device does not have a healthy Internet conne
     </div>
     <div class="card">
       <h2>🔁 Recurring tasks</h2>
-      <p style="font-size:12.5px;color:var(--muted);margin:-6px 0 12px;">Tasks that repeat automatically appear on their due dates without you re-typing them. Stop one here and it won't generate any further — days it already created stay as they are.</p>
       <div id="recurringList"></div>
     </div>
     <div class="two-col">
@@ -658,8 +651,15 @@ This typically indicates that your device does not have a healthy Internet conne
     </div>
     <div class="card">
       <h2>Sync &amp; backup</h2>
+      <div class="card" id="setupBanner" style="display:none;background:var(--marigold-soft);border-color:var(--marigold);margin-bottom:12px;">
+        <h2 style="font-size:16px;">⚠️ Sync isn't set up yet</h2>
+        <div class="sub" style="margin-bottom:0;">This file needs your free Firebase config pasted in before it can sync. Open the file in a text editor, find the <span class="mono">FIREBASE_CONFIG</span> block near the top of the script, and paste in the values from your Firebase project (see the setup steps I gave you). Until then, everything still works and saves — just on this device only.</div>
+      </div>
       <div class="sub">This file syncs automatically through your free Firebase project — log on your phone, and it appears on your laptop next time you open this same file there (and back again), no export step needed. Offline entries save on-device and sync the moment you're back online. This works because both devices open <em>this exact HTML file</em> with your Firebase config already pasted in — keep a copy of it (with your config filled in) on both devices, e.g. saved into a folder your cloud drive backs up, so you're always opening the same file. You can still export a manual backup anytime below.</div>
-      <div class="export-row">
+      <div class="sub" style="margin-top:10px;">Data lives in your own free Firebase project (Google account) — not on Anthropic's servers, no Claude subscription needed. Nothing else can read it unless they have your exact config values.<br>
+      <strong>iPhone:</strong> open the file in Safari → Share → Add to Home Screen for an app-like icon.<br>
+      <strong>Windows:</strong> open in Edge/Chrome → menu (⋯) → Apps → Install this site as an app.</div>
+      <div class="export-row" style="margin-top:12px;">
         <button class="export-btn" onclick="exportExcel()" style="font-weight:700;">⬇ Export Excel (.xlsx — best for analysis)</button>
         <button class="export-btn" onclick="exportCSV()">⬇ Export CSV</button>
         <button class="export-btn" onclick="downloadBackup()">⬇ Export JSON (manual backup)</button>
@@ -669,9 +669,41 @@ This typically indicates that your device does not have a healthy Internet conne
     </div>
   </div>
 
-  <div class="footnote">Data lives in your own free Firebase project (Google account) — not on Anthropic's servers, no Claude subscription needed. Nothing else can read it unless they have your exact config values.<br>
-  <strong>iPhone:</strong> open the file in Safari → Share → Add to Home Screen for an app-like icon.<br>
-  <strong>Windows:</strong> open in Edge/Chrome → menu (⋯) → Apps → Install this site as an app.</div>
+  <!-- GUIDE -->
+  <div class="panel" id="panel-guide">
+    <div class="card">
+      <h2>📖 Guide</h2>
+      <div class="sub">Quick notes on what each part of the dashboard does — nothing here is required reading, just here if you want a reminder of how something works.</div>
+    </div>
+    <div class="card">
+      <h2>🍽️ Quick meal log</h2>
+      <div class="sub">Log a meal the moment you eat it — it adds straight into that day's totals and clears itself. No need to remember everything at night.</div>
+    </div>
+    <div class="card">
+      <h2>🔁 Recurring tasks</h2>
+      <div class="sub">Tasks that repeat automatically appear on their due dates without you re-typing them. Stop one from the Recurring tasks card and it won't generate any further — days it already created stay as they are.</div>
+    </div>
+    <div class="card">
+      <h2>Move a task to another date</h2>
+      <div class="sub">Any unfinished task has a "→ Tmrw" button for a quick one-day push, and a 📅 button to pick any specific future date instead.</div>
+    </div>
+    <div class="card">
+      <h2>Reset tab</h2>
+      <div class="sub">This tab is just for you to see — nothing here feeds a score or ring. Log what happened, no pressure.</div>
+    </div>
+    <div class="card">
+      <h2>Day note &amp; off day</h2>
+      <div class="sub">The note field under the date picker is for context ("Traveling," "At a friend's," etc.) — purely informational, doesn't affect any score. The "Off day" checkbox is separate: it doesn't change how a day scores, it just lets you count how many off days you take each month in History, while still logging and scoring anything you do that day normally.</div>
+    </div>
+    <div class="card">
+      <h2>History — On/Off/Whole &amp; blurring</h2>
+      <div class="sub">The On days / Off days / Whole toggle filters the averages and rings shown for the month and trend — and also blurs out whichever days don't match on the calendar itself, so the calendar always reflects whichever lens you're currently viewing.</div>
+    </div>
+    <div class="card">
+      <h2>Navigation</h2>
+      <div class="sub">Left/Right arrow keys (or the side arrow buttons, or a swipe on mobile) move between tabs. Up/Down arrow keys (or the "‹ Day / Day ›" buttons) move between dates. Arrow keys are ignored while you're typing in a field, so they never hijack your cursor.</div>
+    </div>
+  </div>
 
 </div>
 
