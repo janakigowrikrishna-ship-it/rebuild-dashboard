@@ -85,9 +85,68 @@ This typically indicates that your device does not have a healthy Internet conne
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html{-webkit-text-size-adjust:100%;}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:'Figtree',-apple-system,BlinkMacSystemFont,sans-serif;font-size:15px;-webkit-font-smoothing:antialiased;padding-bottom:env(safe-area-inset-bottom);}
+
+  .app-bg{position:fixed;inset:0;z-index:0;overflow:hidden;background:
+    radial-gradient(ellipse 100% 60% at 15% 0%, #FDEDE3 0%, transparent 55%),
+    radial-gradient(ellipse 90% 55% at 100% 20%, #E4F3EF 0%, transparent 55%),
+    radial-gradient(ellipse 80% 60% at 20% 100%, #FBF0DE 0%, transparent 55%),
+    var(--bg);
+  }
+  .blob{position:absolute;border-radius:50%;filter:blur(60px);opacity:.55;}
+  .blob-1{width:420px;height:420px;background:radial-gradient(circle, #FF9E80 0%, transparent 70%);top:-120px;left:8%;animation:driftA 26s ease-in-out infinite;}
+  .blob-2{width:380px;height:380px;background:radial-gradient(circle, #7FD8C9 0%, transparent 70%);top:30%;right:-100px;animation:driftB 32s ease-in-out infinite;}
+  .blob-3{width:340px;height:340px;background:radial-gradient(circle, #FFD37A 0%, transparent 70%);bottom:-100px;left:30%;animation:driftC 30s ease-in-out infinite;}
+  @keyframes driftA{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(40px,60px) scale(1.08);}}
+  @keyframes driftB{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(-50px,40px) scale(1.05);}}
+  @keyframes driftC{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(30px,-40px) scale(1.1);}}
+  #ringDiet, #ringFitness, #ringProd{transition:stroke-dashoffset 1s cubic-bezier(.22,1,.36,1), opacity .3s ease;}
+  .bg-pattern{position:absolute;inset:0;opacity:.5;
+    background-image:radial-gradient(rgba(43,36,30,0.05) 1px, transparent 1px);
+    background-size:22px 22px;
+  }
+  @media(prefers-reduced-motion: reduce){ .blob{animation:none;} }
   h1,h2,h3{font-family:'Fraunces',Georgia,serif;font-weight:600;margin:0;}
   .mono{font-family:'Space Mono',monospace;}
-  .wrap{max-width:1080px;margin:0 auto;padding:14px 16px 70px;}
+  .wrap{max-width:1080px;margin:0 auto;padding:14px 16px 70px 260px;position:relative;z-index:1;}
+  @media(max-width:640px){ .wrap{padding:12px 12px 70px;} }
+
+  .sidebar{
+    position:fixed;top:0;left:0;bottom:0;width:240px;z-index:20;overflow-y:auto;
+    background:rgba(255,255,255,0.72);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+    border-right:1px solid rgba(234,227,216,0.7);
+    display:flex;flex-direction:column;padding:22px 14px;
+  }
+  .sidebar-brand-block{display:flex;align-items:center;gap:10px;margin:4px 8px 20px;}
+  .sidebar-flower{flex-shrink:0;}
+  .sidebar-brand{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--ink);white-space:nowrap;line-height:1.2;}
+  .sidebar-subbrand{font-size:10.5px;color:var(--muted);font-weight:600;letter-spacing:.02em;white-space:nowrap;}
+
+  .tabs{display:flex;flex-direction:column;gap:4px;}
+  .tab{
+    display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:14px;
+    font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap;color:var(--muted);
+    transition:all .18s;
+  }
+  .tab:hover{background:rgba(234,227,216,0.6);color:var(--ink);}
+  .tab.active{background:var(--ink);color:#fff;box-shadow:0 6px 16px rgba(43,36,30,0.25);}
+  .tab-icon{font-size:18px;line-height:1;}
+
+  .sidebar-date{margin-top:18px;padding-top:16px;border-top:1px solid rgba(234,227,216,0.9);}
+  .sidebar-date-nav{display:flex;align-items:center;gap:6px;}
+  .sidebar-date-nav input[type=date]{flex:1;min-width:0;padding:8px 6px;border:1.5px solid var(--line);border-radius:10px;font-size:12px;}
+  .sidebar-date-nav .today-btn{padding:8px 10px;}
+
+  /* Below 640px the sidebar can't stay as a fixed left column and still leave
+     room for the date picker/note field to be usable — it becomes a static
+     top bar instead, with tabs scrolling horizontally and date controls
+     stacked underneath, and the main content flows below it normally. */
+  @media(max-width:640px){
+    .sidebar{position:static;width:auto;height:auto;overflow-y:visible;border-right:none;border-bottom:1px solid rgba(234,227,216,0.9);margin-bottom:12px;border-radius:0 0 18px 18px;}
+    .tabs{flex-direction:row;overflow-x:auto;-ms-overflow-style:none;scrollbar-width:none;}
+    .tabs::-webkit-scrollbar{display:none;}
+    .tab{flex:0 0 auto;}
+    .tab-label{display:none;}
+  }
 
   .hero{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:12px;}
   .hero-text .eyebrow{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:3px;}
@@ -95,7 +154,7 @@ This typically indicates that your device does not have a healthy Internet conne
   .hero-text .date{color:var(--muted);font-size:14px;margin-top:2px;}
   .date-nav{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;}
   .date-nav input[type=date]{padding:8px 10px;border:1.5px solid var(--line);border-radius:10px;font-family:'Space Mono',monospace;font-size:13px;background:var(--surface);}
-  .today-btn{background:var(--ink);color:#fff;border:none;padding:8px 14px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;}
+  .today-btn{background:var(--ink);color:#fff;border:none;padding:8px 16px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;}
   #tabArrowLeft, #tabArrowRight{
     position:fixed; top:50%; transform:translateY(-50%);
     width:36px; height:56px; border:none; border-radius:10px;
@@ -105,10 +164,11 @@ This typically indicates that your device does not have a healthy Internet conne
     transition:background 0.15s;
   }
   #tabArrowLeft:hover, #tabArrowRight:hover{ background:rgba(43,36,30,0.22); }
-  #tabArrowLeft{ left:6px; }
+  #tabArrowLeft{ left:252px; }
   #tabArrowRight{ right:6px; }
   @media (max-width: 640px){
     #tabArrowLeft, #tabArrowRight{ width:28px; height:48px; font-size:18px; opacity:0.6; }
+    #tabArrowLeft{ left:6px; }
   }
   .mode-btn{background:var(--bg);color:var(--muted);border:1.5px solid var(--line);padding:7px 14px;border-radius:999px;font-size:12.5px;font-weight:700;cursor:pointer;}
   .mode-btn.active{background:var(--ink);color:#fff;border-color:var(--ink);}
@@ -137,15 +197,67 @@ This typically indicates that your device does not have a healthy Internet conne
   .legend-row .pct{margin-left:6px;font-family:'Space Mono',monospace;font-weight:700;}
   .dc-inline{font-size:11.5px;font-weight:700;margin-left:8px;padding-left:8px;border-left:1px solid var(--line);opacity:.9;white-space:nowrap;}
 
-  .tabs{display:flex;gap:6px;margin-bottom:14px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:5px;overflow-x:auto;position:sticky;top:8px;z-index:10;-ms-overflow-style:none;scrollbar-width:none;}
-  .tabs::-webkit-scrollbar{display:none;}
-  .tab{flex:1;text-align:center;padding:8px 12px;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap;color:var(--muted);transition:all .15s;}
-  .tab.active{background:var(--ink);color:#fff;}
   .panel{display:none;}
-  .panel.active{display:block;animation:fade .25s ease;}
+  .panel.active{
+    display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));
+    gap:16px;align-items:start;animation:fade .25s ease;
+  }
+  @media(max-width:640px){ .panel.active{grid-template-columns:1fr;} }
   @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
 
-  .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow);margin-bottom:12px;}
+  .card{
+    background:var(--surface);border:none;border-radius:22px;padding:18px 20px;
+    box-shadow:0 1px 2px rgba(43,36,30,0.06), 0 8px 20px rgba(43,36,30,0.07);
+    margin-bottom:0;
+    transition:transform .18s ease, box-shadow .18s ease;
+  }
+  .card:hover{
+    transform:translateY(-3px);
+    box-shadow:0 2px 4px rgba(43,36,30,0.08), 0 14px 28px rgba(43,36,30,0.11);
+  }
+  .panel.active > .two-col{display:contents;}
+  .full-row{grid-column:1 / -1;}
+  .modal-overlay{
+    position:fixed;inset:0;z-index:100;background:rgba(43,36,30,0.45);
+    display:flex;align-items:center;justify-content:center;padding:20px;
+    animation:fadeModal .18s ease;
+  }
+  @keyframes fadeModal{from{opacity:0;}to{opacity:1;}}
+  .modal-box{
+    background:var(--surface);border-radius:22px;padding:22px 24px;max-width:520px;width:100%;
+    max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(43,36,30,0.3);
+  }
+  .share-card{
+    aspect-ratio:9/16;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:space-between;
+    padding:34px 22px;text-align:center;color:#4A3B2E;position:relative;overflow:hidden;
+    background:
+      radial-gradient(ellipse 75% 45% at 10% 5%, rgba(255,182,150,0.35) 0%, transparent 62%),
+      radial-gradient(ellipse 75% 45% at 95% 15%, rgba(255,214,153,0.3) 0%, transparent 62%),
+      radial-gradient(ellipse 75% 50% at 90% 95%, rgba(140,214,198,0.3) 0%, transparent 62%),
+      radial-gradient(ellipse 70% 45% at 5% 100%, rgba(216,180,230,0.25) 0%, transparent 62%),
+      linear-gradient(170deg, #FFF8F0 0%, #FDF1E4 50%, #FCEBDA 100%);
+  }
+  .share-card::before{
+    content:'';position:absolute;top:16px;left:14px;width:64px;height:64px;opacity:.55;pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Cg fill='none' stroke='%23D98E6E' stroke-width='1.5' stroke-linecap='round'%3E%3Cpath d='M10 50 Q14 30 8 12'/%3E%3Cpath d='M10 40 Q18 36 22 26'/%3E%3Cpath d='M9 30 Q1 26 -2 16'/%3E%3Cpath d='M8 20 Q16 16 18 8'/%3E%3Ccircle cx='18' cy='8' r='2.2' fill='%23F2B27E'/%3E%3Ccircle cx='22' cy='26' r='2' fill='%237FBFA8'/%3E%3C/g%3E%3C/svg%3E");
+    background-size:contain;background-repeat:no-repeat;
+  }
+  .share-card::after{
+    content:'';position:absolute;bottom:12px;right:12px;width:76px;height:76px;opacity:.5;pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 70 70'%3E%3Cg fill='none' stroke='%23C97B5F' stroke-width='1.5' stroke-linecap='round'%3E%3Ccircle cx='35' cy='35' r='6' fill='%23F6D9A8'/%3E%3Cpath d='M35 29 Q30 18 35 10 Q40 18 35 29' fill='%23F2B7B0'/%3E%3Cpath d='M41 33 Q54 30 60 22 Q56 34 41 33' fill='%23A9DCCB'/%3E%3Cpath d='M41 39 Q52 46 60 52 Q50 50 41 39' fill='%23F2B7B0'/%3E%3Cpath d='M29 39 Q22 50 14 54 Q20 44 29 39' fill='%23A9DCCB'/%3E%3Cpath d='M29 33 Q16 28 8 20 Q18 26 29 33' fill='%23F6D9A8'/%3E%3C/g%3E%3C/svg%3E");
+    background-size:contain;background-repeat:no-repeat;
+  }
+  .share-card-top{display:flex;flex-direction:column;align-items:center;gap:5px;z-index:1;}
+  .share-card-top .share-header{font-family:'Playfair Display',serif;font-size:34px;line-height:1.15;font-weight:700;letter-spacing:.01em;margin-bottom:8px;color:#3A2E22;}
+  .share-card-top .share-brand-word{font-family:'Playfair Display',serif;font-size:14px;letter-spacing:.05em;opacity:.85;}
+  .share-card-top .share-brand-sub{font-size:11px;letter-spacing:.02em;opacity:.65;}
+  .share-card-mid{display:flex;flex-direction:column;align-items:center;gap:2px;z-index:1;}
+  .share-card .share-date{font-family:'Playfair Display',serif;font-size:16px;letter-spacing:.04em;opacity:.85;}
+  .share-card-bottom{display:flex;flex-direction:column;align-items:center;gap:8px;z-index:1;}
+  .share-card .share-quote{font-size:13px;font-style:italic;opacity:.85;max-width:240px;line-height:1.55;}
+  .share-card .share-name{font-family:'Playfair Display',serif;font-size:14px;opacity:.8;}
+  .share-card .share-brand{font-size:10.5px;letter-spacing:.06em;opacity:.55;display:flex;align-items:center;gap:6px;}
+  .share-card-calendar .month-grid{width:100%;}
   .card h2{font-size:16.5px;margin-bottom:2px;}
   .card .sub{color:var(--muted);font-size:12.5px;margin-bottom:8px;}
   .target-note{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);font-weight:600;margin-bottom:8px;background:var(--bg);padding:4px 9px;border-radius:999px;}
@@ -153,7 +265,7 @@ This typically indicates that your device does not have a healthy Internet conne
 
   .field-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:8px;}
   .field label{display:flex;align-items:flex-end;min-height:28px;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em;}
-  .field input[type=number],.field input[type=text]{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font-family:'Space Mono',monospace;font-size:15px;background:var(--bg);}
+  .field input[type=number],.field input[type=text]{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:13px;font-family:'Space Mono',monospace;font-size:15px;background:var(--bg);}
   .field input[type=number]:focus,.field input[type=text]:focus{outline:none;border-color:var(--coral);}
 
   .subhead{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:10px 0 6px;}
@@ -175,7 +287,8 @@ This typically indicates that your device does not have a healthy Internet conne
   .stepper button{width:34px;height:34px;border-radius:9px;border:1.5px solid var(--line);background:var(--bg);font-size:16px;cursor:pointer;font-weight:700;color:var(--ink);}
   .stepper .val{font-family:'Space Mono',monospace;font-weight:700;font-size:16px;min-width:24px;text-align:center;}
 
-  .save-btn{background:var(--coral);color:#fff;border:none;padding:10px 18px;border-radius:11px;font-weight:700;font-size:13px;cursor:pointer;margin-top:4px;}
+  .save-btn{background:var(--coral);color:#fff;border:none;padding:11px 22px;border-radius:999px;font-weight:700;font-size:13px;cursor:pointer;margin-top:4px;transition:transform .15s ease;}
+  .save-btn:hover{transform:scale(1.03);}
   .save-btn.teal{background:var(--teal);}
   .save-btn.marigold{background:var(--marigold);}
   .save-btn:active{transform:scale(0.98);}
@@ -209,7 +322,8 @@ This typically indicates that your device does not have a healthy Internet conne
   .kpi .l{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:2px;font-weight:700;}
 
   .export-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
-  .export-btn{background:var(--bg);border:1.5px solid var(--line);border-radius:9px;padding:8px 14px;font-size:12.5px;font-weight:700;cursor:pointer;color:var(--ink);}
+  .export-btn{background:var(--bg);border:1.5px solid var(--line);border-radius:999px;padding:9px 16px;font-size:12.5px;font-weight:700;cursor:pointer;color:var(--ink);transition:background .15s ease;}
+  .export-btn:hover{background:var(--line);}
   .export-btn:hover{border-color:var(--ink);}
   .footnote{text-align:center;color:var(--muted);font-size:11px;margin-top:20px;line-height:1.6;}
   #importFile{display:none;}
@@ -246,6 +360,12 @@ This typically indicates that your device does not have a healthy Internet conne
 </style>
 </head>
 <body>
+<div class="app-bg">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+  <div class="bg-pattern"></div>
+</div>
 <button id="tabArrowLeft" onclick="shiftTab(-1)" title="Previous tab" aria-label="Previous tab">&#8249;</button>
 <button id="tabArrowRight" onclick="shiftTab(1)" title="Next tab" aria-label="Next tab">&#8250;</button>
 
@@ -256,22 +376,7 @@ This typically indicates that your device does not have a healthy Internet conne
       <div class="eyebrow">Rebuild — Daily Dashboard</div>
       <h1 id="greeting">Hi Janu</h1>
       <div class="date" id="todayDate"></div>
-      <div class="date-nav">
-        <button class="today-btn" onclick="shiftDate(-1)" title="Previous day" aria-label="Previous day">‹ Day</button>
-        <input type="date" id="dateSelector">
-        <button class="today-btn" onclick="shiftDate(1)" title="Next day" aria-label="Next day">Day ›</button>
-        <button class="today-btn" onclick="jumpToDate(todayStr())">Jump to Today</button>
-        <span class="editing-flag" id="editingFlag">Editing a past day</span>
-      </div>
-      <div style="margin-top:10px;max-width:420px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-        <input type="text" id="dayNote" placeholder="Day note — e.g. Traveling, At a friend's, Sick… (optional)"
-          style="flex:1;min-width:220px;padding:8px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);font-size:12.5px;color:var(--ink);"
-          onchange="saveDayNote()">
-        <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap;">
-          <input type="checkbox" id="offDayToggle" onchange="saveOffDay()" style="width:15px;height:15px;accent-color:var(--marigold);cursor:pointer;">
-          Off day
-        </label>
-      </div>
+      <span class="editing-flag" id="editingFlag">Editing a past day</span>
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
       <div class="sync-pill" id="syncPill"><span class="dot" id="syncDot"></span><span id="syncLabel">Checking sync…</span></div>
@@ -300,17 +405,52 @@ This typically indicates that your device does not have a healthy Internet conne
       <div class="legend-row" style="border-top:1px dashed var(--line);padding-top:6px;margin-top:2px;"><span class="dot" style="background:var(--ink)"></span>Overall<span class="pct" id="dcOverallPct"></span></div>
     </div>
     <div class="ring-fill"><div class="day-count" id="ringDayCount"></div><p id="ringQuote"></p><span class="ring-fill-line"></span></div>
+    <button class="export-btn" style="margin-top:10px;" onclick="openShareModal()">📸 Share today</button>
   </div>
 
-  <div class="tabs">
-    <div class="tab active" data-tab="diet">Diet</div>
-    <div class="tab" data-tab="fitness">Fitness</div>
-    <div class="tab" data-tab="reset">Reset</div>
-    <div class="tab" data-tab="productivity">Productivity</div>
-    <div class="tab" data-tab="month">History</div>
-    <div class="tab" data-tab="trends">Trends</div>
-    <div class="tab" data-tab="guide">Guide</div>
-  </div>
+  <nav class="sidebar">
+    <div class="sidebar-brand-block">
+      <svg class="sidebar-flower" viewBox="0 0 60 60" width="34" height="34">
+        <g transform="translate(30,38)">
+          <ellipse cx="0" cy="-14" rx="5" ry="8" fill="var(--coral)" opacity="0.85"/>
+          <ellipse cx="9" cy="-8" rx="5" ry="8" fill="var(--marigold)" opacity="0.85" transform="rotate(70 9 -8)"/>
+          <ellipse cx="9" cy="4" rx="5" ry="8" fill="var(--teal)" opacity="0.8" transform="rotate(140 9 4)"/>
+          <ellipse cx="-9" cy="4" rx="5" ry="8" fill="var(--marigold)" opacity="0.85" transform="rotate(-140 -9 4)"/>
+          <ellipse cx="-9" cy="-8" rx="5" ry="8" fill="var(--coral)" opacity="0.8" transform="rotate(-70 -9 -8)"/>
+          <circle cx="0" cy="0" r="4.5" fill="var(--ink)" opacity="0.85"/>
+        </g>
+        <path d="M30 44 Q28 52 30 60" stroke="var(--teal)" stroke-width="2" fill="none" opacity="0.6"/>
+      </svg>
+      <div>
+        <div class="sidebar-brand">Wildflower</div>
+        <div class="sidebar-subbrand">எண்ணுவது உயர்வு</div>
+      </div>
+    </div>
+    <div class="tabs">
+      <div class="tab active" data-tab="diet"><span class="tab-icon">🥗</span><span class="tab-label">Diet</span></div>
+      <div class="tab" data-tab="fitness"><span class="tab-icon">💪</span><span class="tab-label">Fitness</span></div>
+      <div class="tab" data-tab="reset"><span class="tab-icon">🌙</span><span class="tab-label">Reset</span></div>
+      <div class="tab" data-tab="productivity"><span class="tab-icon">✅</span><span class="tab-label">Productivity</span></div>
+      <div class="tab" data-tab="month"><span class="tab-icon">📅</span><span class="tab-label">History</span></div>
+      <div class="tab" data-tab="trends"><span class="tab-icon">📈</span><span class="tab-label">Trends</span></div>
+      <div class="tab" data-tab="guide"><span class="tab-icon">📖</span><span class="tab-label">Guide</span></div>
+    </div>
+    <div class="sidebar-date">
+      <div class="sidebar-date-nav">
+        <button class="today-btn" onclick="shiftDate(-1)" title="Previous day" aria-label="Previous day">‹</button>
+        <input type="date" id="dateSelector">
+        <button class="today-btn" onclick="shiftDate(1)" title="Next day" aria-label="Next day">›</button>
+      </div>
+      <button class="today-btn" style="width:100%;margin-top:6px;" onclick="jumpToDate(todayStr())">Jump to Today</button>
+      <input type="text" id="dayNote" placeholder="Day note (optional)"
+        style="width:100%;margin-top:10px;padding:8px 10px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);font-size:12px;color:var(--ink);box-sizing:border-box;"
+        onchange="saveDayNote()">
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap;margin-top:8px;">
+        <input type="checkbox" id="offDayToggle" onchange="saveOffDay()" style="width:15px;height:15px;accent-color:var(--marigold);cursor:pointer;">
+        Off day
+      </label>
+    </div>
+  </nav>
 
   <!-- DIET -->
   <div class="panel active" id="panel-diet">
@@ -338,38 +478,38 @@ This typically indicates that your device does not have a healthy Internet conne
       <button class="save-btn" onclick="saveDiet()">Save this day's macros</button>
       <span class="save-msg" id="msg-diet">Saved ✓</span>
     </div>
-    <div class="card">
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="card" id="quickMealCard">
+        <h2>🍽️ Quick meal log</h2>
+        <div class="field-grid">
+          <div class="field"><label>Meal</label>
+            <select id="quickMealName">
+              <option value="Breakfast">Breakfast</option>
+              <option value="Lunch">Lunch</option>
+              <option value="Snack">Snack</option>
+              <option value="Dinner">Dinner</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="field"><label>Calories</label><input type="number" step="any" id="quick-calories" placeholder="0"></div>
+          <div class="field"><label>Protein (g)</label><input type="number" step="any" id="quick-protein" placeholder="0"></div>
+          <div class="field"><label>Carbs (g)</label><input type="number" step="any" id="quick-carbs" placeholder="0"></div>
+          <div class="field"><label>Fat (g)</label><input type="number" step="any" id="quick-fat" placeholder="0"></div>
+          <div class="field"><label>Fiber (g)</label><input type="number" step="any" id="quick-fiber" placeholder="0"></div>
+        </div>
+        <button class="save-btn" onclick="addQuickMeal()">Add to today's totals</button>
+        <span class="save-msg" id="msg-quickmeal">Added ✓</span>
+      </div>
+      <div class="card">
+        <h2>Water trend</h2>
+        <div class="chart-box"><canvas id="chartWater"></canvas></div>
+      </div>
+    </div>
+    <div class="card full-row">
       <h2>Calories trend</h2>
       <div class="chart-box"><canvas id="chartCalories"></canvas></div>
-    </div>
-    <div class="card">
-      <h2>Protein trend</h2>
+      <h2 style="margin-top:16px;">Protein trend</h2>
       <div class="chart-box"><canvas id="chartProtein"></canvas></div>
-    </div>
-    <div class="card">
-      <h2>Water trend</h2>
-      <div class="chart-box"><canvas id="chartWater"></canvas></div>
-    </div>
-    <div class="card" id="quickMealCard">
-      <h2>🍽️ Quick meal log</h2>
-      <div class="field-grid">
-        <div class="field"><label>Meal</label>
-          <select id="quickMealName">
-            <option value="Breakfast">Breakfast</option>
-            <option value="Lunch">Lunch</option>
-            <option value="Snack">Snack</option>
-            <option value="Dinner">Dinner</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-        <div class="field"><label>Calories</label><input type="number" step="any" id="quick-calories" placeholder="0"></div>
-        <div class="field"><label>Protein (g)</label><input type="number" step="any" id="quick-protein" placeholder="0"></div>
-        <div class="field"><label>Carbs (g)</label><input type="number" step="any" id="quick-carbs" placeholder="0"></div>
-        <div class="field"><label>Fat (g)</label><input type="number" step="any" id="quick-fat" placeholder="0"></div>
-        <div class="field"><label>Fiber (g)</label><input type="number" step="any" id="quick-fiber" placeholder="0"></div>
-      </div>
-      <button class="save-btn" onclick="addQuickMeal()">Add to today's totals</button>
-      <span class="save-msg" id="msg-quickmeal">Added ✓</span>
     </div>
   </div>
 
@@ -477,14 +617,18 @@ This typically indicates that your device does not have a healthy Internet conne
         <h2>Study &amp; Office</h2>
         <div class="task-add">
           <input type="text" id="newTaskTextStudy" placeholder="Add a study/office task…" onkeydown="if(event.key==='Enter')addTask('study')">
-          <select id="repeatStudy" onchange="onRepeatChange('study')" style="max-width:120px;">
+          <select id="repeatStudy" onchange="onRepeatChange('study')" style="max-width:130px;">
             <option value="none">Doesn't repeat</option>
             <option value="daily">Every day</option>
-            <option value="every_n" data-n="2">Every 2 days</option>
-            <option value="weekly">Every week</option>
-            <option value="monthly">Every month</option>
-            <option value="custom">Custom…</option>
+            <option value="weekly">Every week on…</option>
+            <option value="monthly">Every month on…</option>
+            <option value="custom">Every N days…</option>
           </select>
+          <select id="repeatWeekdayStudy" style="display:none;max-width:110px;">
+            <option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option>
+            <option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option>
+          </select>
+          <input type="number" id="repeatDayOfMonthStudy" min="1" max="31" step="1" placeholder="e.g. 10" style="display:none;width:70px;">
           <input type="number" id="repeatCustomStudy" min="1" step="1" placeholder="days" style="display:none;width:64px;">
           <button onclick="addTask('study')">Add</button>
         </div>
@@ -498,14 +642,18 @@ This typically indicates that your device does not have a healthy Internet conne
         <h2>Other Work</h2>
         <div class="task-add">
           <input type="text" id="newTaskTextOther" placeholder="Add another-work task…" onkeydown="if(event.key==='Enter')addTask('other')">
-          <select id="repeatOther" onchange="onRepeatChange('other')" style="max-width:120px;">
+          <select id="repeatOther" onchange="onRepeatChange('other')" style="max-width:130px;">
             <option value="none">Doesn't repeat</option>
             <option value="daily">Every day</option>
-            <option value="every_n" data-n="2">Every 2 days</option>
-            <option value="weekly">Every week</option>
-            <option value="monthly">Every month</option>
-            <option value="custom">Custom…</option>
+            <option value="weekly">Every week on…</option>
+            <option value="monthly">Every month on…</option>
+            <option value="custom">Every N days…</option>
           </select>
+          <select id="repeatWeekdayOther" style="display:none;max-width:110px;">
+            <option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option>
+            <option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option>
+          </select>
+          <input type="number" id="repeatDayOfMonthOther" min="1" max="31" step="1" placeholder="e.g. 10" style="display:none;width:70px;">
           <input type="number" id="repeatCustomOther" min="1" step="1" placeholder="days" style="display:none;width:64px;">
           <button onclick="addTask('other')">Add</button>
         </div>
@@ -518,7 +666,8 @@ This typically indicates that your device does not have a healthy Internet conne
     </div>
     <div class="card">
       <h2>🔁 Recurring tasks</h2>
-      <div id="recurringList"></div>
+      <div class="sub">See and manage the tasks that repeat automatically.</div>
+      <button class="export-btn" onclick="openRecurringModal()">View recurring tasks</button>
     </div>
     <div class="two-col">
       <div class="card">
@@ -552,7 +701,7 @@ This typically indicates that your device does not have a healthy Internet conne
 
   <!-- MONTH / HISTORY -->
   <div class="panel" id="panel-month">
-    <div class="card">
+    <div class="card full-row">
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
         <button class="mode-btn" id="modeBtn-whole" onclick="setHistoryMode('whole')">Whole</button>
         <button class="mode-btn" id="modeBtn-on" onclick="setHistoryMode('on')">On days</button>
@@ -563,6 +712,7 @@ This typically indicates that your device does not have a healthy Internet conne
         <div class="lbl" id="monthLabel"></div>
         <button onclick="shiftMonth(1)">›</button>
       </div>
+      <button class="export-btn" style="margin-bottom:10px;" onclick="openCalendarShareModal()">📸 Share this calendar</button>
       <div class="month-grid" id="monthGrid"></div>
       <div class="month-legend">
         <div class="item"><span class="dot" style="background:var(--coral)"></span> Diet</div>
@@ -574,8 +724,9 @@ This typically indicates that your device does not have a healthy Internet conne
       <div class="month-summary kpi-grid" id="monthSummary"></div>
       <div id="monthClassBreakdown" class="month-class-rows"></div>
     </div>
-    <div class="card">
+    <div class="card full-row">
       <h2>This month's average <span style="font-weight:400;color:var(--muted);font-size:13px;" id="monthAvgModeLabel"></span></h2>
+      <button class="export-btn" style="margin-bottom:10px;" onclick="openConsistencyModal(1)">📸 Share this month</button>
       <div class="ring-card" style="margin-bottom:0;">
         <div class="ring-wrap" id="monthAvgRingWrap"></div>
         <div class="ring-legend">
@@ -585,12 +736,17 @@ This typically indicates that your device does not have a healthy Internet conne
         </div>
       </div>
     </div>
-    <div class="card">
+    <div class="card full-row">
       <h2>History trend <span style="font-weight:400;color:var(--muted);font-size:13px;" id="trendModeLabel"></span></h2>
-      <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
         <button class="mode-btn" id="rangeBtn-3" onclick="setTrendRange(3)">Last 3 months</button>
         <button class="mode-btn" id="rangeBtn-6" onclick="setTrendRange(6)">Last 6 months</button>
         <button class="mode-btn" id="rangeBtn-12" onclick="setTrendRange(12)">Last 12 months</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+        <button class="export-btn" onclick="openConsistencyModal(3)">📸 Share last 3 months</button>
+        <button class="export-btn" onclick="openConsistencyModal(6)">📸 Share last 6 months</button>
+        <button class="export-btn" onclick="openConsistencyModal(12)">📸 Share last 12 months</button>
       </div>
       <div id="trendRingRow" style="display:flex;gap:16px;flex-wrap:wrap;justify-content:flex-start;"></div>
     </div>
@@ -598,7 +754,7 @@ This typically indicates that your device does not have a healthy Internet conne
 
   <!-- TRENDS -->
   <div class="panel" id="panel-trends">
-    <div class="card">
+    <div class="card full-row">
       <h2>Your targets</h2>
       <div class="sub">This is the one place to set or change every target — the input pages stay clean and just track what you log.</div>
       <div class="subhead">Calories &amp; macros</div>
@@ -636,20 +792,20 @@ This typically indicates that your device does not have a healthy Internet conne
       <span class="save-msg" id="msg-targets">Saved ✓</span>
       <div class="sub" style="margin:12px 0 0;"><button class="export-btn" onclick="resetTargets()" style="font-weight:600;">Reset to defaults</button></div>
     </div>
-    <div class="card">
+    <div class="card full-row">
       <h2>This month — day classification</h2>
       <div class="sub">Blank/unlogged days aren't counted. 100% = Excelling, 81–99% = Hardworking, 60–80% = Surviving, under 60% = Underperforming.</div>
       <div class="kpi-grid" id="classCountsDetail"></div>
     </div>
-    <div class="card">
+    <div class="card full-row">
       <h2>Last 7 days</h2>
       <div class="kpi-grid" id="kpi7"></div>
     </div>
-    <div class="card">
+    <div class="card full-row">
       <h2>Month to date</h2>
       <div class="kpi-grid" id="kpiMonth"></div>
     </div>
-    <div class="card">
+    <div class="card full-row">
       <h2>Sync &amp; backup</h2>
       <div class="card" id="setupBanner" style="display:none;background:var(--marigold-soft);border-color:var(--marigold);margin-bottom:12px;">
         <h2 style="font-size:16px;">⚠️ Sync isn't set up yet</h2>
@@ -705,6 +861,46 @@ This typically indicates that your device does not have a healthy Internet conne
     </div>
   </div>
 
+</div>
+
+<div id="recurringModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this) closeRecurringModal()">
+  <div class="modal-box">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <h2 style="margin:0;">🔁 Recurring tasks</h2>
+      <button class="today-btn" onclick="closeRecurringModal()">Close</button>
+    </div>
+    <div id="recurringList"></div>
+  </div>
+</div>
+
+<div id="shareModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this) closeShareModal()">
+  <div class="modal-box" style="max-width:340px;padding:0;overflow:hidden;">
+    <div id="shareCardContent" class="share-card"></div>
+    <div style="padding:14px;text-align:center;">
+      <div class="sub" style="margin-bottom:8px;">Screenshot this card to share.</div>
+      <button class="today-btn" onclick="closeShareModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="consistencyModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this) closeConsistencyModal()">
+  <div class="modal-box" style="max-width:340px;padding:0;overflow:hidden;">
+    <div id="consistencyCardContent" class="share-card"></div>
+    <div style="padding:14px;text-align:center;">
+      <div class="sub" style="margin-bottom:8px;">Screenshot this card to share.</div>
+      <button class="today-btn" onclick="closeConsistencyModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="calendarShareModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this) closeCalendarShareModal()">
+  <div class="modal-box" style="max-width:340px;padding:0;overflow:hidden;">
+    <div id="calendarShareContent" class="share-card share-card-calendar"></div>
+    <div style="padding:14px;text-align:center;">
+      <div class="sub" style="margin-bottom:8px;">Screenshot this card to share.</div>
+      <button class="today-btn" onclick="closeCalendarShareModal()">Close</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -1262,14 +1458,22 @@ function isDueOn(tpl, dateStr){
   const d = new Date(dateStr+'T00:00:00');
   const diffDays = Math.round((d - start) / 86400000);
   if(tpl.freq === 'daily') return true;
-  if(tpl.freq === 'every_n' || tpl.freq === 'custom') return diffDays % tpl.interval === 0;
-  if(tpl.freq === 'weekly') return diffDays % 7 === 0;
+  if(tpl.freq === 'every_n' || tpl.freq === 'custom'){
+    const interval = tpl.interval || 1;
+    return diffDays % interval === 0;
+  }
+  if(tpl.freq === 'weekly'){
+    // Explicit weekday if set (e.g. "every Friday"); older templates created
+    // before this option existed fall back to the weekday of their start date.
+    const weekday = tpl.weekday !== undefined ? tpl.weekday : start.getDay();
+    return d.getDay() === weekday;
+  }
   if(tpl.freq === 'monthly'){
-    const startDay = start.getDate();
     const dLast = daysInMonthOf(d.getFullYear(), d.getMonth());
-    // Same day-of-month as the start date; if the start day doesn't exist in a
-    // shorter month (e.g. started on the 31st), fall back to that month's last day.
-    return d.getDate() === Math.min(startDay, dLast);
+    // Explicit day-of-month if set (e.g. "every 10th"); older templates fall
+    // back to the day-of-month of their start date.
+    const targetDay = tpl.dayOfMonth !== undefined ? tpl.dayOfMonth : start.getDate();
+    return d.getDate() === Math.min(targetDay, dLast);
   }
   return false;
 }
@@ -1322,16 +1526,142 @@ function stopRecurring(templateId){
   renderRecurringList();
   syncTaskCounts();
 }
+function shareBrandTop(){
+  return `<div class="share-card-top">
+    <div class="share-header">Janaki's Journey</div>
+    <svg viewBox="0 0 60 60" width="26" height="26">
+      <g transform="translate(30,38)">
+        <ellipse cx="0" cy="-14" rx="5" ry="8" fill="#FF9E80" opacity="0.9"/>
+        <ellipse cx="9" cy="-8" rx="5" ry="8" fill="#FFD37A" opacity="0.9" transform="rotate(70 9 -8)"/>
+        <ellipse cx="9" cy="4" rx="5" ry="8" fill="#7FD8C9" opacity="0.85" transform="rotate(140 9 4)"/>
+        <ellipse cx="-9" cy="4" rx="5" ry="8" fill="#FFD37A" opacity="0.9" transform="rotate(-140 -9 4)"/>
+        <ellipse cx="-9" cy="-8" rx="5" ry="8" fill="#FF9E80" opacity="0.85" transform="rotate(-70 -9 -8)"/>
+        <circle cx="0" cy="0" r="4.5" fill="#fff" opacity="0.9"/>
+      </g>
+    </svg>
+    <div class="share-brand-word">Wildflower</div>
+    <div class="share-brand-sub">எண்ணுவது உயர்வு</div>
+  </div>`;
+}
+function shareBrandBottom(){
+  return `<div class="share-card-bottom">
+    <div class="share-name">— Janu</div>
+    <div class="share-brand">🌱 wildflower · rebuilding, quietly</div>
+  </div>`;
+}
+function openShareModal(){
+  const scores = dayCategoryScores(day);
+  const dateLabel = new Date(selectedDate+'T00:00:00').toLocaleDateString('en-IN',{weekday:'long', day:'numeric', month:'long', year:'numeric'});
+  const quote = (document.getElementById('ringQuote').textContent || '').trim();
+  document.getElementById('shareCardContent').innerHTML = `
+    ${shareBrandTop()}
+    <div class="share-card-mid">
+      <div class="share-date">${dateLabel}</div>
+      ${tripleRingSVG(scores.d, scores.f, scores.p, 160)}
+    </div>
+    <div class="share-card-bottom">
+      <div class="share-quote">${quote}</div>
+      ${shareBrandBottom()}
+    </div>
+  `;
+  document.getElementById('shareModal').style.display = 'flex';
+}
+function closeShareModal(){ document.getElementById('shareModal').style.display = 'none'; }
+
+function openConsistencyModal(range){
+  range = range || 1; // 1 = this month only, or 3/6/12 for multi-month trend
+  if(range === 1){
+    const y = monthCursor.getFullYear(), m = monthCursor.getMonth();
+    const {dScores, fScores, pScores, overallScores, offDayCount} = monthScores(y, m, 'whole');
+    const avgD = dScores.length ? avg(dScores) : null;
+    const avgF = fScores.length ? avg(fScores) : null;
+    const avgP = pScores.length ? avg(pScores) : null;
+    const monthLabel = monthCursor.toLocaleDateString('en-IN',{month:'long', year:'numeric'});
+    const buckets = {Excelling:0,Hardworking:0,Surviving:0,Underperforming:0};
+    overallScores.forEach(v=>{ const l = classifyPct(v); if(l) buckets[l]++; });
+    document.getElementById('consistencyCardContent').innerHTML = `
+      ${shareBrandTop()}
+      <div class="share-card-mid">
+        <div class="share-date">${monthLabel}</div>
+        ${tripleRingSVG(avgD, avgF, avgP, 160)}
+      </div>
+      <div class="share-card-bottom">
+        <div class="share-quote">${buckets.Excelling} Excelling · ${buckets.Hardworking} Hardworking days this month<br>${offDayCount} off days taken, on purpose.</div>
+        ${shareBrandBottom()}
+      </div>
+    `;
+  } else {
+    // Multi-month trend card: a small ring per month, same data as the History trend row.
+    const baseY = monthCursor.getFullYear(), baseM = monthCursor.getMonth();
+    const cells = [];
+    for(let i=range-1; i>=0; i--){
+      const d = new Date(baseY, baseM - i, 1);
+      const {dScores, fScores, pScores} = monthScores(d.getFullYear(), d.getMonth(), 'whole');
+      const avgD = dScores.length ? avg(dScores) : null;
+      const avgF = fScores.length ? avg(fScores) : null;
+      const avgP = pScores.length ? avg(pScores) : null;
+      const label = d.toLocaleDateString('en-IN', {month:'short'});
+      cells.push(`<div style="display:flex;flex-direction:column;align-items:center;gap:3px;">${tripleRingSVG(avgD, avgF, avgP, 46)}<span style="font-size:9px;opacity:.8;">${label}</span></div>`);
+    }
+    const rangeLabel = `Last ${range} months`;
+    document.getElementById('consistencyCardContent').innerHTML = `
+      ${shareBrandTop()}
+      <div class="share-card-mid">
+        <div class="share-date">${rangeLabel}</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:260px;">${cells.join('')}</div>
+      </div>
+      <div class="share-card-bottom">
+        <div class="share-quote">Consistency over time — showing up for myself, one month at a time.</div>
+        ${shareBrandBottom()}
+      </div>
+    `;
+  }
+  document.getElementById('consistencyModal').style.display = 'flex';
+}
+function closeConsistencyModal(){ document.getElementById('consistencyModal').style.display = 'none'; }
+
+function openCalendarShareModal(){
+  const monthLabel = monthCursor.toLocaleDateString('en-IN',{month:'long', year:'numeric'});
+  const gridHTML = document.getElementById('monthGrid').innerHTML;
+  document.getElementById('calendarShareContent').innerHTML = `
+    ${shareBrandTop()}
+    <div class="share-card-mid" style="width:100%;">
+      <div class="share-date">${monthLabel}</div>
+      <div class="month-grid" style="width:100%;">${gridHTML}</div>
+    </div>
+    <div class="share-card-bottom">
+      <div class="share-quote">Every ring is a day I showed up.</div>
+      ${shareBrandBottom()}
+    </div>
+  `;
+  document.getElementById('calendarShareModal').style.display = 'flex';
+}
+function closeCalendarShareModal(){ document.getElementById('calendarShareModal').style.display = 'none'; }
+
+function openRecurringModal(){
+  renderRecurringList();
+  document.getElementById('recurringModal').style.display = 'flex';
+}
+function closeRecurringModal(){
+  document.getElementById('recurringModal').style.display = 'none';
+}
 function renderRecurringList(){
   const el = document.getElementById('recurringList');
   if(!el) return;
   const templates = (store.recurringTemplates||[]).filter(t=>t.active);
   if(templates.length===0){ el.innerHTML = '<div class="hist-empty">No recurring tasks yet — set one using the "Repeats" option when adding a task above.</div>'; return; }
+  const weekdayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const freqLabel = tpl => {
     if(tpl.freq==='daily') return 'Every day';
-    if(tpl.freq==='weekly') return 'Every week';
-    if(tpl.freq==='monthly') return 'Every month';
-    return `Every ${tpl.interval} days`;
+    if(tpl.freq==='weekly'){
+      const wd = tpl.weekday !== undefined ? tpl.weekday : new Date(tpl.startDate+'T00:00:00').getDay();
+      return `Every ${weekdayNames[wd]}`;
+    }
+    if(tpl.freq==='monthly'){
+      const dom = tpl.dayOfMonth !== undefined ? tpl.dayOfMonth : new Date(tpl.startDate+'T00:00:00').getDate();
+      return `Every month on the ${dom}${dom===1?'st':dom===2?'nd':dom===3?'rd':'th'}`;
+    }
+    return `Every ${tpl.interval||1} days`;
   };
   el.innerHTML = templates.map(tpl=>`
     <div class="task-item">
@@ -1346,32 +1676,39 @@ function currentTasks(){
   return store.tasksByDate[selectedDate];
 }
 function onRepeatChange(group){
-  const select = document.getElementById('repeat'+(group==='study'?'Study':'Other'));
-  const customInput = document.getElementById('repeatCustom'+(group==='study'?'Study':'Other'));
-  customInput.style.display = select.value==='custom' ? 'inline-block' : 'none';
+  const suffix = group==='study' ? 'Study' : 'Other';
+  const select = document.getElementById('repeat'+suffix);
+  const weekdayEl = document.getElementById('repeatWeekday'+suffix);
+  const domEl = document.getElementById('repeatDayOfMonth'+suffix);
+  const customEl = document.getElementById('repeatCustom'+suffix);
+  weekdayEl.style.display = select.value==='weekly' ? 'inline-block' : 'none';
+  domEl.style.display = select.value==='monthly' ? 'inline-block' : 'none';
+  customEl.style.display = select.value==='custom' ? 'inline-block' : 'none';
 }
 function addTask(group){
   const inputId = group==='study' ? 'newTaskTextStudy' : 'newTaskTextOther';
   const input = document.getElementById(inputId);
   const txt = input.value.trim();
   if(!txt) return;
-  const repeatSelect = document.getElementById('repeat'+(group==='study'?'Study':'Other'));
+  const suffix = group==='study' ? 'Study' : 'Other';
+  const repeatSelect = document.getElementById('repeat'+suffix);
   const repeatVal = repeatSelect.value;
   const newTask = {id:Date.now(), text:txt, group, done:false};
   if(repeatVal !== 'none'){
     if(!store.recurringTemplates) store.recurringTemplates = [];
-    let freq = repeatVal, interval = null;
-    if(repeatVal === 'every_n'){ interval = 2; }
-    if(repeatVal === 'custom'){
-      const customInput = document.getElementById('repeatCustom'+(group==='study'?'Study':'Other'));
-      const n = Number(customInput.value);
-      interval = (n && n > 0) ? n : 1;
-      freq = 'custom';
-      customInput.value = '';
+    const tpl = {id: Date.now()+Math.random(), text: txt, group, freq: repeatVal, startDate: selectedDate, active: true};
+    if(repeatVal === 'weekly'){
+      tpl.weekday = Number(document.getElementById('repeatWeekday'+suffix).value);
+    } else if(repeatVal === 'monthly'){
+      const dom = Number(document.getElementById('repeatDayOfMonth'+suffix).value);
+      tpl.dayOfMonth = (dom >= 1 && dom <= 31) ? dom : new Date(selectedDate+'T00:00:00').getDate();
+    } else if(repeatVal === 'custom'){
+      const n = Number(document.getElementById('repeatCustom'+suffix).value);
+      tpl.interval = (n && n > 0) ? n : 1;
+      document.getElementById('repeatCustom'+suffix).value = '';
     }
-    const tplId = Date.now()+Math.random();
-    store.recurringTemplates.push({id: tplId, text: txt, group, freq, interval, startDate: selectedDate, active: true});
-    newTask.recurringId = tplId;
+    store.recurringTemplates.push(tpl);
+    newTask.recurringId = tpl.id;
     repeatSelect.value = 'none';
     onRepeatChange(group);
   }
