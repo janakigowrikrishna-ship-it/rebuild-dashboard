@@ -960,7 +960,16 @@ function initFirebase(){
   try{
     firebase.initializeApp(FIREBASE_CONFIG);
     const db = firebase.firestore();
-    db.enablePersistence({synchronizeTabs:true}).catch(()=>{ /* unsupported browser or multi-tab — still works, just without offline cache */ });
+    // Deliberately NOT calling db.enablePersistence() here. That feature is
+    // Firestore's own built-in offline cache, separate from (and redundant
+    // with) our own localStorage caching + merge-safe sync logic — and it's
+    // known to throw internal errors in some environments (sandboxed
+    // previews, certain private-browsing modes, some in-app browsers) that
+    // can't be caught from here since they surface later, asynchronously,
+    // during background maintenance rather than at this setup call. Since
+    // our own save/sync system already provides the real offline safety net
+    // and doesn't depend on this feature at all, removing it eliminates a
+    // whole class of noisy, uncatchable errors with no loss of protection.
     docRef = db.collection(FIREBASE_DOC_PATH[0]).doc(FIREBASE_DOC_PATH[1]);
     firebaseReady = true;
   }catch(e){
@@ -1819,14 +1828,19 @@ function migrateLegacyTasks(){
   if(!store.tasksByDate) store.tasksByDate = {};
 }
 
+// How many "target-to-max" widths past the edge you can go before a metric
+// hits zero. The old value of 1 meant even a modest overage (e.g. 165 kcal
+// over a 150-wide buffer) could zero out an entire metric — a cliff-edge that
+// didn't reflect "ate a bit much" fairly. 3 spreads the penalty out gradually.
+const PENALTY_SPAN_MULTIPLIER = 3;
 function rangeScore(val, range){
   if(val === undefined || val === null || isNaN(val)) return null;
   if(val >= range.min && val <= range.max) return 1;
   if(val < range.min){
-    const span = Math.max(1, range.target - range.min);
+    const span = Math.max(1, range.target - range.min) * PENALTY_SPAN_MULTIPLIER;
     return Math.max(0, 1 - (range.min - val)/span);
   }
-  const span = Math.max(1, range.max - range.target);
+  const span = Math.max(1, range.max - range.target) * PENALTY_SPAN_MULTIPLIER;
   return Math.max(0, 1 - (val - range.max)/span);
 }
 function atLeastScore(val, target){
@@ -1836,23 +1850,32 @@ function atLeastScore(val, target){
 function ceilingScore(val, target){
   if(val === undefined || val === null || isNaN(val) || !target) return null;
   if(val <= target) return 1;
-  return Math.max(0, 1 - (val - target)/target);
+  const span = target * PENALTY_SPAN_MULTIPLIER;
+  return Math.max(0, 1 - (val - target)/span);
 }
 function dietScoreFor(d){
-  if(!d || (d.calories===undefined && d.protein===undefined && d.fiber===undefined && d.carbs===undefined && d.fat===undefined)) return 0;
+  if(!d) return 0;
+  // Forgetting to log a macro isn't full failure (0%) — but it's also not the
+  // same as nailing it either. A small flat penalty (counts as if it scored
+  // 90%) reflects "you skipped logging this" without wiping out an otherwise
+  // good day, and without giving free credit for not logging at all.
+  const UNLOGGED_PENALTY_SCORE = 0.9;
   const parts = [
     rangeScore(d.calories, TARGETS.calories),
     atLeastScore(d.protein, TARGETS.protein),
     rangeScore(d.carbs, TARGETS.carbs),
     rangeScore(d.fat, TARGETS.fat),
     rangeScore(d.fiber, TARGETS.fiber)
-  ].map(v=>v===null?0:v);
+  ].map(v=>v===null?UNLOGGED_PENALTY_SCORE:v);
   return parts.reduce((a,b)=>a+b,0)/parts.length;
 }
 function fitnessScoreFor(d){
   if(!d) return 0;
-  const workoutScore = d.workout===undefined ? 0 : (d.workout?1:0.3);
-  const sleepScore = d.sleep===undefined ? 0 : (rangeScore(d.sleep, TARGETS.sleep) ?? 0);
+  // Same small penalty as diet: forgetting to log workout/sleep costs a little,
+  // but doesn't wipe out an otherwise good day.
+  const UNLOGGED_PENALTY_SCORE = 0.9;
+  const workoutScore = d.workout===undefined ? UNLOGGED_PENALTY_SCORE : (d.workout?1:0.3);
+  const sleepScore = d.sleep===undefined ? UNLOGGED_PENALTY_SCORE : (rangeScore(d.sleep, TARGETS.sleep) ?? UNLOGGED_PENALTY_SCORE);
   return (workoutScore + sleepScore) / 2;
 }
 function categoryScore(planned, completed){
@@ -1872,7 +1895,9 @@ function prodScoreFor(d){
 }
 function dayCategoryScores(dd){
   if(!dd) return {d:null,f:null,p:null};
-  const dLogged = dd.calories!==undefined || dd.protein!==undefined || dd.fiber!==undefined || dd.carbs!==undefined || dd.fat!==undefined || dd.water!==undefined;
+  // Water isn't one of the 5 scored macros — logging only water shouldn't count
+  // as "diet logged" and produce a false 0%, it should still show as not-logged.
+  const dLogged = dd.calories!==undefined || dd.protein!==undefined || dd.fiber!==undefined || dd.carbs!==undefined || dd.fat!==undefined;
   const fLogged = dd.workout!==undefined || dd.sleep!==undefined;
   const pLogged = !!dd.plannedStudy || !!dd.plannedOther || dd.screenHours!==undefined;
   return {
