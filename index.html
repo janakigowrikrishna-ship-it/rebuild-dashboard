@@ -449,6 +449,8 @@ This typically indicates that your device does not have a healthy Internet conne
         <input type="checkbox" id="offDayToggle" onchange="saveOffDay()" style="width:15px;height:15px;accent-color:var(--marigold);cursor:pointer;">
         Off day
       </label>
+      <button class="save-btn" style="width:100%;margin-top:14px;" onclick="saveAllSections()">💾 Save all changes</button>
+      <span class="save-msg" id="msg-saveall" style="display:block;text-align:center;margin-top:4px;">Saved ✓</span>
     </div>
   </nav>
 
@@ -475,8 +477,6 @@ This typically indicates that your device does not have a healthy Internet conne
         <div class="chip" data-val="Luteal">Luteal</div>
       </div>
       <div class="progress-bars" id="dietBars"></div>
-      <button class="save-btn" onclick="saveDiet()">Save this day's macros</button>
-      <span class="save-msg" id="msg-diet">Saved ✓</span>
     </div>
     <div style="display:flex;flex-direction:column;gap:16px;">
       <div class="card" id="quickMealCard">
@@ -548,8 +548,6 @@ This typically indicates that your device does not have a healthy Internet conne
         <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;">Energy level (out of 10)</label>
         <div class="slider-row"><input type="range" id="in-energy" min="1" max="10" step="1" value="5"><span class="slider-val mono" id="energyVal">5</span></div>
       </div>
-      <button class="save-btn teal" onclick="saveFitness()" style="margin-top:16px;">Save this day's fitness</button>
-      <span class="save-msg" id="msg-fitness">Saved ✓</span>
     </div>
     <div class="two-col">
       <div class="card">
@@ -578,16 +576,12 @@ This typically indicates that your device does not have a healthy Internet conne
       <div class="chip-row">
         <div class="chip" id="chip-curfew" data-field="curfew">📵 Phone down</div>
       </div>
-      <button class="save-btn teal" onclick="saveReset()" style="margin-top:16px;">Save</button>
-      <span class="save-msg" id="msg-reset">Saved ✓</span>
     </div>
     <div class="card">
       <h2>Meditation</h2>
       <div class="chip-row">
         <div class="chip" id="chip-meditation" data-field="meditation">🧘 Meditated</div>
       </div>
-      <button class="save-btn teal" onclick="saveReset()" style="margin-top:16px;">Save</button>
-      <span class="save-msg" id="msg-reset2">Saved ✓</span>
     </div>
     <div class="card">
       <h2>Reading</h2>
@@ -596,8 +590,6 @@ This typically indicates that your device does not have a healthy Internet conne
         <div class="field"><label>Pages read</label><input type="number" step="any" id="in-bookPages" placeholder="0"></div>
         <div class="field"><label>Minutes read</label><input type="number" step="any" id="in-bookMinutes" placeholder="0"></div>
       </div>
-      <button class="save-btn teal" onclick="saveReading()" style="margin-top:10px;">Save reading log</button>
-      <span class="save-msg" id="msg-reading">Saved ✓</span>
     </div>
     <div class="card">
       <h2>Me time</h2>
@@ -605,8 +597,6 @@ This typically indicates that your device does not have a healthy Internet conne
         <div class="field"><label>Activity</label><input type="text" id="in-meActivity" placeholder="Painting, boxing, cooking…"></div>
         <div class="field"><label>Minutes</label><input type="number" step="any" id="in-meMinutes" placeholder="0"></div>
       </div>
-      <button class="save-btn teal" onclick="saveMeTime()" style="margin-top:10px;">Save me-time log</button>
-      <span class="save-msg" id="msg-metime">Saved ✓</span>
     </div>
   </div>
 
@@ -671,7 +661,7 @@ This typically indicates that your device does not have a healthy Internet conne
     </div>
     <div class="two-col">
       <div class="card">
-        <h2>Screen time</h2>
+        <h2>Scroll Time</h2>
         <div class="slider-row" style="margin-top:6px;">
           <input type="number" id="in-screenHours-hours" min="0" max="18" step="1" placeholder="0" class="bold-input" style="width:70px;">
           <span style="font-size:12px;color:var(--muted);">hrs</span>
@@ -679,11 +669,9 @@ This typically indicates that your device does not have a healthy Internet conne
           <span style="font-size:12px;color:var(--muted);">mins</span>
         </div>
         <div id="screenBar" style="margin-top:10px;"></div>
-        <button class="save-btn marigold" onclick="saveProductivity()" style="margin-top:12px;">Save this day's productivity</button>
-        <span class="save-msg" id="msg-prod">Saved ✓</span>
       </div>
       <div class="card">
-        <h2>Screen time trend</h2>
+        <h2>Scroll Time trend</h2>
         <div class="chart-box"><canvas id="chartScreen"></canvas></div>
       </div>
     </div>
@@ -785,7 +773,7 @@ This typically indicates that your device does not have a healthy Internet conne
       </div>
       <div class="subhead">Productivity</div>
       <div class="field-grid">
-        <div class="field"><label>Screen time — ceiling (h)</label><input type="number" step="0.1" id="tgt-screenHours"></div>
+        <div class="field"><label>Scroll Time — ceiling (h)</label><input type="number" step="0.1" id="tgt-screenHours"></div>
       </div>
       <div class="sub" style="margin:10px 0;">A day "in range" (between min and max) scores 100% for that item. Going under the min or over the max scores less the further out you are — this replaces a single perfect number with a healthy zone.</div>
       <button class="save-btn marigold" onclick="saveTargets()">Save targets</button>
@@ -1390,6 +1378,53 @@ function addQuickMeal(){
   fields.forEach(f=> document.getElementById('quick-'+f).value = '');
   flashMsg('msg-quickmeal');
 }
+// One save for everything — reads every section's fields and writes once,
+// instead of six separate saves each triggering their own sync round-trip.
+// Useful when backfilling several days' worth of data in one sitting.
+function saveAllSections(){
+  // Diet
+  ['calories','protein','carbs','fat','fiber','water'].forEach(f=>{
+    const v = document.getElementById('in-'+f).value;
+    day[f] = v === '' ? undefined : Number(v);
+  });
+  // Fitness
+  const sh = document.getElementById('in-sleep-hours').value;
+  const sm = document.getElementById('in-sleep-mins').value;
+  const sleepHours = sh === '' ? 0 : Number(sh);
+  const sleepMins = sm === '' ? 0 : Number(sm);
+  day.sleep = sleepHours + (sleepMins / 60);
+  day.energy = Number(document.getElementById('in-energy').value);
+  const cb = document.getElementById('in-caloriesBurnt').value;
+  day.caloriesBurnt = cb === '' ? undefined : Number(cb);
+  const st = document.getElementById('in-steps').value;
+  day.steps = st === '' ? undefined : Number(st);
+  // Reading
+  day.bookTitle = document.getElementById('in-bookTitle').value || undefined;
+  const pg = document.getElementById('in-bookPages').value;
+  const bmn = document.getElementById('in-bookMinutes').value;
+  day.bookPages = pg === '' ? undefined : Number(pg);
+  day.bookMinutes = bmn === '' ? undefined : Number(bmn);
+  // Me time
+  day.meActivity = document.getElementById('in-meActivity').value || undefined;
+  const mmn = document.getElementById('in-meMinutes').value;
+  day.meMinutes = mmn === '' ? undefined : Number(mmn);
+  // Productivity / scroll time
+  const ssh = document.getElementById('in-screenHours-hours').value;
+  const ssm = document.getElementById('in-screenHours-mins').value;
+  if(ssh === '' && ssm === ''){
+    day.screenHours = undefined;
+  } else {
+    const hrs = ssh === '' ? 0 : Number(ssh);
+    const mins = ssm === '' ? 0 : Number(ssm);
+    day.screenHours = hrs + (mins / 60);
+  }
+  // Curfew/meditation chips already write directly to `day` when clicked —
+  // nothing to read for those here, saveStore() below covers them too.
+  saveStore();
+  renderAll();
+  const sidebarMsg = document.getElementById('msg-saveall');
+  if(sidebarMsg){ sidebarMsg.style.display='inline'; setTimeout(()=>sidebarMsg.style.display='none', 1800); }
+}
 function saveDiet(){
   ['calories','protein','carbs','fat','fiber','water'].forEach(f=>{
     const v = document.getElementById('in-'+f).value;
@@ -1558,6 +1593,75 @@ function shareBrandBottom(){
     <div class="share-brand">🌱 wildflower · rebuilding, quietly</div>
   </div>`;
 }
+// With numbers — used wherever there's one specific score to show (a single
+// day, or one month's average). Without this, a stranger scrolling by has no
+// idea a colored ring means anything at all.
+function shareRingLegend(d, f, p){
+  const fmt = v => v===null ? '—' : Math.round(v*100)+'%';
+  return `<div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;font-size:11px;margin-top:4px;">
+    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#FF5940;margin-right:4px;"></span>Diet ${fmt(d)}</span>
+    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#0FA396;margin-right:4px;"></span>Fitness ${fmt(f)}</span>
+    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#F2A215;margin-right:4px;"></span>Productivity ${fmt(p)}</span>
+  </div>`;
+}
+// Colors-only, no numbers — used for the multi-ring and calendar cards where
+// showing a dozen sets of percentages would be visual noise. Still tells a
+// viewer what the three colors mean, which is the minimum needed context.
+function shareColorKey(){
+  return `<div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;font-size:10.5px;margin-top:6px;opacity:.85;">
+    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#FF5940;margin-right:4px;"></span>Diet</span>
+    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#0FA396;margin-right:4px;"></span>Fitness</span>
+    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#F2A215;margin-right:4px;"></span>Productivity</span>
+  </div>`;
+}
+// A short honest line reflecting how the day classified overall — deliberately
+// silent on Underperforming days, since that's not wording to put into a public
+// post without you choosing it yourself. Deterministic per date (via a simple
+// hash of the date string) so re-opening the share card doesn't reshuffle it.
+const DAY_VIBE_LINES = {
+  Excelling: [
+    "Today, I kept every promise I made to myself.",
+    "I showed up fully — not for anyone else, just for me.",
+    "A day I can look back on and know I meant it.",
+    "No performance. Just proof I followed through.",
+    "This is what choosing myself looks like.",
+    "I did the quiet work today, and it mattered.",
+    "A day I built, not just survived.",
+    "Every small choice today added up to something real."
+  ],
+  Hardworking: [
+    "I didn't do everything, but I did enough to keep going.",
+    "Some days aren't easy. Today I chose myself anyway.",
+    "Still here, still trying — that's the whole point.",
+    "Not a perfect day. A real one.",
+    "I showed up imperfectly, and that still counts.",
+    "Progress, not perfection — today proved it.",
+    "I kept one promise today. That's enough.",
+    "Tired, but I still moved forward."
+  ],
+  Surviving: [
+    "Today wasn't about doing more. It was about not giving up.",
+    "I'm still here. That's not nothing.",
+    "Some days, just staying is the win.",
+    "I didn't quit. That's the whole story today.",
+    "A slow day, but I didn't disappear.",
+    "Barely holding on still counts as holding on.",
+    "Today I gave what I had left, and that was enough.",
+    "Not every day is a climb. Some are just about breathing."
+  ]
+};
+function dayVibeLine(d, f, p, dateStr){
+  const scored = [d, f, p].filter(v=>v!==null);
+  if(!scored.length) return '';
+  const overall = scored.reduce((a,b)=>a+b,0)/scored.length;
+  const label = classifyPct(overall);
+  const lines = DAY_VIBE_LINES[label];
+  if(!lines) return ''; // Underperforming or unrecognized — say nothing
+  let hash = 0;
+  for(let i=0;i<dateStr.length;i++) hash = (hash*31 + dateStr.charCodeAt(i)) >>> 0;
+  const line = lines[hash % lines.length];
+  return `<div style="font-size:12px;font-style:italic;opacity:.8;margin:2px 0 4px;">${line}</div>`;
+}
 function openShareModal(){
   const scores = dayCategoryScores(day);
   const dateLabel = new Date(selectedDate+'T00:00:00').toLocaleDateString('en-IN',{weekday:'long', day:'numeric', month:'long', year:'numeric'});
@@ -1565,8 +1669,10 @@ function openShareModal(){
   document.getElementById('shareCardContent').innerHTML = `
     ${shareBrandTop()}
     <div class="share-card-mid">
+      ${dayVibeLine(scores.d, scores.f, scores.p, selectedDate)}
       <div class="share-date">${dateLabel}</div>
       ${tripleRingSVG(scores.d, scores.f, scores.p, 160)}
+      ${shareRingLegend(scores.d, scores.f, scores.p)}
     </div>
     <div class="share-card-bottom">
       <div class="share-quote">${quote}</div>
@@ -1593,6 +1699,7 @@ function openConsistencyModal(range){
       <div class="share-card-mid">
         <div class="share-date">${monthLabel}</div>
         ${tripleRingSVG(avgD, avgF, avgP, 160)}
+        ${shareRingLegend(avgD, avgF, avgP)}
       </div>
       <div class="share-card-bottom">
         <div class="share-quote">${buckets.Excelling} Excelling · ${buckets.Hardworking} Hardworking days this month<br>${offDayCount} off days taken, on purpose.</div>
@@ -1618,6 +1725,7 @@ function openConsistencyModal(range){
       <div class="share-card-mid">
         <div class="share-date">${rangeLabel}</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:260px;">${cells.join('')}</div>
+        ${shareColorKey()}
       </div>
       <div class="share-card-bottom">
         <div class="share-quote">Consistency over time — showing up for myself, one month at a time.</div>
@@ -1637,6 +1745,7 @@ function openCalendarShareModal(){
     <div class="share-card-mid" style="width:100%;">
       <div class="share-date">${monthLabel}</div>
       <div class="month-grid" style="width:100%;">${gridHTML}</div>
+      ${shareColorKey()}
     </div>
     <div class="share-card-bottom">
       <div class="share-quote">Every ring is a day I showed up.</div>
