@@ -614,11 +614,16 @@ This typically indicates that your device does not have a healthy Internet conne
             <option value="monthly">Every month on…</option>
             <option value="custom">Every N days…</option>
           </select>
-          <select id="repeatWeekdayStudy" style="display:none;max-width:110px;">
-            <option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option>
-            <option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option>
-          </select>
-          <input type="number" id="repeatDayOfMonthStudy" min="1" max="31" step="1" placeholder="e.g. 10" style="display:none;width:70px;">
+          <div id="repeatWeekdayStudy" style="display:none;flex-wrap:wrap;gap:6px;align-items:center;">
+            <label style="font-size:11px;"><input type="checkbox" class="weekday-check-Study" value="0">Sun</label>
+            <label style="font-size:11px;"><input type="checkbox" class="weekday-check-Study" value="1">Mon</label>
+            <label style="font-size:11px;"><input type="checkbox" class="weekday-check-Study" value="2">Tue</label>
+            <label style="font-size:11px;"><input type="checkbox" class="weekday-check-Study" value="3">Wed</label>
+            <label style="font-size:11px;"><input type="checkbox" class="weekday-check-Study" value="4">Thu</label>
+            <label style="font-size:11px;"><input type="checkbox" class="weekday-check-Study" value="5">Fri</label>
+            <label style="font-size:11px;"><input type="checkbox" class="weekday-check-Study" value="6">Sat</label>
+          </div>
+          <input type="text" id="repeatDayOfMonthStudy" placeholder="e.g. 10, 25" style="display:none;width:90px;">
           <input type="number" id="repeatCustomStudy" min="1" step="1" placeholder="days" style="display:none;width:64px;">
           <button onclick="addTask('study')">Add</button>
         </div>
@@ -639,11 +644,16 @@ This typically indicates that your device does not have a healthy Internet conne
             <option value="monthly">Every month on…</option>
             <option value="custom">Every N days…</option>
           </select>
-          <select id="repeatWeekdayOther" style="display:none;max-width:110px;">
-            <option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option>
-            <option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option>
-          </select>
-          <input type="number" id="repeatDayOfMonthOther" min="1" max="31" step="1" placeholder="e.g. 10" style="display:none;width:70px;">
+          <div id="repeatWeekdayOther" style="display:none;flex-wrap:wrap;gap:6px;align-items:center;">
+            <label style="font-size:11px;"><input type="checkbox" class="weekday-check-Other" value="0">Sun</label>
+            <label style="font-size:11px;"><input type="checkbox" class="weekday-check-Other" value="1">Mon</label>
+            <label style="font-size:11px;"><input type="checkbox" class="weekday-check-Other" value="2">Tue</label>
+            <label style="font-size:11px;"><input type="checkbox" class="weekday-check-Other" value="3">Wed</label>
+            <label style="font-size:11px;"><input type="checkbox" class="weekday-check-Other" value="4">Thu</label>
+            <label style="font-size:11px;"><input type="checkbox" class="weekday-check-Other" value="5">Fri</label>
+            <label style="font-size:11px;"><input type="checkbox" class="weekday-check-Other" value="6">Sat</label>
+          </div>
+          <input type="text" id="repeatDayOfMonthOther" placeholder="e.g. 10, 25" style="display:none;width:90px;">
           <input type="number" id="repeatCustomOther" min="1" step="1" placeholder="days" style="display:none;width:64px;">
           <button onclick="addTask('other')">Add</button>
         </div>
@@ -1507,15 +1517,22 @@ function isDueOn(tpl, dateStr){
     return diffDays % interval === 0;
   }
   if(tpl.freq === 'weekly'){
-    // Explicit weekday if set (e.g. "every Friday"); older templates created
-    // before this option existed fall back to the weekday of their start date.
+    // Multiple weekdays if set (e.g. Mon+Wed+Fri via tpl.weekdays); falls back
+    // to a single weekday (tpl.weekday, from before multi-select existed), and
+    // finally to the weekday of the template's start date if neither is set.
+    if(Array.isArray(tpl.weekdays)) return tpl.weekdays.includes(d.getDay());
     const weekday = tpl.weekday !== undefined ? tpl.weekday : start.getDay();
     return d.getDay() === weekday;
   }
   if(tpl.freq === 'monthly'){
     const dLast = daysInMonthOf(d.getFullYear(), d.getMonth());
-    // Explicit day-of-month if set (e.g. "every 10th"); older templates fall
-    // back to the day-of-month of their start date.
+    // Multiple days-of-month if set (e.g. 10th + 25th via tpl.daysOfMonth);
+    // falls back to a single day (tpl.dayOfMonth, from before multi-day
+    // existed), and finally to the start date's day-of-month if neither is set.
+    // Each day is clamped to the month's actual last day for short months.
+    if(Array.isArray(tpl.daysOfMonth)){
+      return tpl.daysOfMonth.some(day => d.getDate() === Math.min(day, dLast));
+    }
     const targetDay = tpl.dayOfMonth !== undefined ? tpl.dayOfMonth : start.getDate();
     return d.getDate() === Math.min(targetDay, dLast);
   }
@@ -1768,16 +1785,19 @@ function renderRecurringList(){
   if(!el) return;
   const templates = (store.recurringTemplates||[]).filter(t=>t.active);
   if(templates.length===0){ el.innerHTML = '<div class="hist-empty">No recurring tasks yet — set one using the "Repeats" option when adding a task above.</div>'; return; }
-  const weekdayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const freqLabel = tpl => {
     if(tpl.freq==='daily') return 'Every day';
     if(tpl.freq==='weekly'){
-      const wd = tpl.weekday !== undefined ? tpl.weekday : new Date(tpl.startDate+'T00:00:00').getDay();
-      return `Every ${weekdayNames[wd]}`;
+      const shortNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      const wds = Array.isArray(tpl.weekdays) ? tpl.weekdays : [tpl.weekday !== undefined ? tpl.weekday : new Date(tpl.startDate+'T00:00:00').getDay()];
+      const sorted = wds.slice().sort((a,b)=>a-b);
+      return `Every ${sorted.map(w=>shortNames[w]).join(', ')}`;
     }
     if(tpl.freq==='monthly'){
-      const dom = tpl.dayOfMonth !== undefined ? tpl.dayOfMonth : new Date(tpl.startDate+'T00:00:00').getDate();
-      return `Every month on the ${dom}${dom===1?'st':dom===2?'nd':dom===3?'rd':'th'}`;
+      const ordinal = n => `${n}${n===1||n===21||n===31?'st':n===2||n===22?'nd':n===3||n===23?'rd':'th'}`;
+      const days = Array.isArray(tpl.daysOfMonth) ? tpl.daysOfMonth : [tpl.dayOfMonth !== undefined ? tpl.dayOfMonth : new Date(tpl.startDate+'T00:00:00').getDate()];
+      const sorted = days.slice().sort((a,b)=>a-b);
+      return `Every month on the ${sorted.map(ordinal).join(', ')}`;
     }
     return `Every ${tpl.interval||1} days`;
   };
@@ -1799,7 +1819,7 @@ function onRepeatChange(group){
   const weekdayEl = document.getElementById('repeatWeekday'+suffix);
   const domEl = document.getElementById('repeatDayOfMonth'+suffix);
   const customEl = document.getElementById('repeatCustom'+suffix);
-  weekdayEl.style.display = select.value==='weekly' ? 'inline-block' : 'none';
+  weekdayEl.style.display = select.value==='weekly' ? 'flex' : 'none';
   domEl.style.display = select.value==='monthly' ? 'inline-block' : 'none';
   customEl.style.display = select.value==='custom' ? 'inline-block' : 'none';
 }
@@ -1816,10 +1836,19 @@ function addTask(group){
     if(!store.recurringTemplates) store.recurringTemplates = [];
     const tpl = {id: Date.now()+Math.random(), text: txt, group, freq: repeatVal, startDate: selectedDate, active: true};
     if(repeatVal === 'weekly'){
-      tpl.weekday = Number(document.getElementById('repeatWeekday'+suffix).value);
+      // Multiple weekdays can be picked (e.g. Mon+Wed+Fri) — falls back to the
+      // task's own creation weekday if somehow none were checked.
+      const checked = Array.from(document.querySelectorAll('.weekday-check-'+suffix+':checked')).map(el=>Number(el.value));
+      tpl.weekdays = checked.length ? checked : [new Date(selectedDate+'T00:00:00').getDay()];
+      document.querySelectorAll('.weekday-check-'+suffix).forEach(el=>el.checked=false);
     } else if(repeatVal === 'monthly'){
-      const dom = Number(document.getElementById('repeatDayOfMonth'+suffix).value);
-      tpl.dayOfMonth = (dom >= 1 && dom <= 31) ? dom : new Date(selectedDate+'T00:00:00').getDate();
+      // Multiple days-of-month can be entered comma-separated (e.g. "10, 25")
+      // — falls back to this task's own creation date if nothing valid was typed.
+      const raw = document.getElementById('repeatDayOfMonth'+suffix).value;
+      const parsed = raw.split(',').map(s=>Number(s.trim())).filter(n=>n>=1 && n<=31 && !isNaN(n));
+      const uniqueDays = [...new Set(parsed)];
+      tpl.daysOfMonth = uniqueDays.length ? uniqueDays : [new Date(selectedDate+'T00:00:00').getDate()];
+      document.getElementById('repeatDayOfMonth'+suffix).value = '';
     } else if(repeatVal === 'custom'){
       const n = Number(document.getElementById('repeatCustom'+suffix).value);
       tpl.interval = (n && n > 0) ? n : 1;
