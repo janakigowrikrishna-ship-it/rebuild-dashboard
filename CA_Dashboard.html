@@ -143,7 +143,7 @@ a{text-decoration:none;color:inherit;}
 .ring-legend-list{display:flex;flex-direction:column;gap:5px;font-size:11.5px;}
 .ring-legend-list .rl-row{display:flex;align-items:center;gap:6px;}
 .ring-legend-list .rl-row b{margin-left:auto;font-family:'Courier New',monospace;}
-.ring-quote{flex:1;min-width:120px;font-family:Georgia,serif;font-style:italic;color:var(--lav-deep);font-size:13.5px;line-height:1.5;border-left:1px dashed var(--line);padding-left:14px;text-align:left;}
+.ring-quote{flex:1;min-width:120px;font-family:Georgia,serif;font-style:italic;color:var(--lav-deep);font-size:14px;line-height:1.6;border-left:1px dashed var(--line);padding-left:14px;text-align:center;display:flex;align-items:center;justify-content:center;max-width:190px;margin:0 auto;}
 .hero-row{display:flex;gap:16px;align-items:stretch;flex-wrap:wrap;margin-bottom:16px;}
 .hero-row .ring-card{flex:1.6;min-width:280px;margin-bottom:0;}
 .countdown-card{flex:1;min-width:180px;margin-bottom:0;background:linear-gradient(135deg,var(--lav),var(--lav-deep));border:none;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:14px;}
@@ -267,7 +267,7 @@ a{text-decoration:none;color:inherit;}
             <div class="rl-row"><span class="dot" style="background:var(--gold)"></span>Reset<b id="rlReset">0%</b></div>
           </div>
         </div>
-        <div class="ring-quote">"You did this once; you can do it again!"</div>
+        <div class="ring-quote">"You did this once;<br>you can do it again!"</div>
       </div>
       <div class="card countdown-card">
         <div class="cc-num" id="countdownNum">—</div>
@@ -962,29 +962,51 @@ function jumpToStudyDate(d){
   loadDay();
 }
 
-/* ---------- Focus timer ---------- */
-let timerSeconds = 0, timerInterval = null, timerRunning = false;
+/* ---------- Focus timer (survives backgrounding via wall-clock timestamps) ---------- */
+const TIMER_STATE_KEY = 'ca_dashboard_timer_v1';
+let timerSeconds = 0, timerInterval = null, timerRunning = false, timerStartEpoch = null, timerSubjectVal = null, timerDateVal = null;
+
 function refreshTimerSubjectOptions(){
   const sel = document.getElementById('timerSubject');
   if(!sel) return;
   const cur = sel.value;
   sel.innerHTML = store.subjects.map(s=>`<option value="${s}">${s}</option>`).join('');
   if(store.subjects.includes(cur)) sel.value = cur;
+  else if(timerSubjectVal && store.subjects.includes(timerSubjectVal)) sel.value = timerSubjectVal;
 }
 function formatTime(sec){
-  const m = String(Math.floor(sec/60)).padStart(2,'0');
+  const h = Math.floor(sec/3600);
+  const m = String(Math.floor((sec%3600)/60)).padStart(2,'0');
   const s = String(sec%60).padStart(2,'0');
-  return `${m}:${s}`;
+  return h>0 ? `${h}:${m}:${s}` : `${m}:${s}`;
+}
+function saveTimerState(){
+  if(timerRunning){
+    localStorage.setItem(TIMER_STATE_KEY, JSON.stringify({
+      startEpoch: timerStartEpoch, subject: timerSubjectVal, date: timerDateVal
+    }));
+  } else {
+    localStorage.removeItem(TIMER_STATE_KEY);
+  }
+}
+function tickTimerDisplay(){
+  if(!timerRunning || timerStartEpoch===null) return;
+  timerSeconds = Math.floor((Date.now() - timerStartEpoch) / 1000);
+  const el = document.getElementById('timerDisplay');
+  if(el) el.textContent = formatTime(timerSeconds);
 }
 function startTimer(){
   if(timerRunning) return;
   timerRunning = true;
+  timerStartEpoch = Date.now() - (timerSeconds*1000);
+  timerSubjectVal = document.getElementById('timerSubject').value;
+  timerDateVal = selectedDate;
   document.getElementById('timerStartBtn').disabled = true;
   document.getElementById('timerStopBtn').disabled = false;
-  timerInterval = setInterval(()=>{
-    timerSeconds++;
-    document.getElementById('timerDisplay').textContent = formatTime(timerSeconds);
-  }, 1000);
+  saveTimerState();
+  clearInterval(timerInterval);
+  timerInterval = setInterval(tickTimerDisplay, 1000);
+  tickTimerDisplay();
 }
 function stopTimer(){
   if(!timerRunning) return;
@@ -992,26 +1014,61 @@ function stopTimer(){
   clearInterval(timerInterval);
   document.getElementById('timerStartBtn').disabled = false;
   document.getElementById('timerStopBtn').disabled = true;
-  const subj = document.getElementById('timerSubject').value;
+  const subj = timerSubjectVal || document.getElementById('timerSubject').value;
+  const targetDate = timerDateVal || selectedDate;
   const hoursToAdd = Math.round((timerSeconds/3600)*10)/10;
   if(hoursToAdd > 0 && subj){
-    day = ensureDay(selectedDate);
-    if(!day.subjects[subj]) day.subjects[subj] = { hours:0, mockTaken:false, mockScore:'' };
-    day.subjects[subj].hours = Math.round(((+day.subjects[subj].hours||0) + hoursToAdd)*10)/10;
+    const rec = ensureDay(targetDate);
+    if(!rec.subjects[subj]) rec.subjects[subj] = { hours:0, mockTaken:false, mockScore:'' };
+    rec.subjects[subj].hours = Math.round(((+rec.subjects[subj].hours||0) + hoursToAdd)*10)/10;
     saveStore();
-    renderSubjectFields(); updateStudyTotals(); renderRings(); renderStatGrid(); renderStudyMonthCalendar();
+    if(targetDate === selectedDate){
+      day = rec;
+      renderSubjectFields(); updateStudyTotals(); renderRings(); renderStatGrid(); renderStudyMonthCalendar();
+    }
   }
   timerSeconds = 0;
+  timerStartEpoch = null;
+  localStorage.removeItem(TIMER_STATE_KEY);
   document.getElementById('timerDisplay').textContent = '00:00';
 }
 function resetTimer(){
   timerRunning = false;
   clearInterval(timerInterval);
   timerSeconds = 0;
-  document.getElementById('timerDisplay').textContent = '00:00';
-  document.getElementById('timerStartBtn').disabled = false;
-  document.getElementById('timerStopBtn').disabled = true;
+  timerStartEpoch = null;
+  localStorage.removeItem(TIMER_STATE_KEY);
+  const el = document.getElementById('timerDisplay');
+  if(el) el.textContent = '00:00';
+  const startBtn = document.getElementById('timerStartBtn');
+  const stopBtn = document.getElementById('timerStopBtn');
+  if(startBtn) startBtn.disabled = false;
+  if(stopBtn) stopBtn.disabled = true;
 }
+function restoreTimerIfRunning(){
+  try{
+    const raw = localStorage.getItem(TIMER_STATE_KEY);
+    if(!raw) return;
+    const st = JSON.parse(raw);
+    if(!st || !st.startEpoch) return;
+    timerRunning = true;
+    timerStartEpoch = st.startEpoch;
+    timerSubjectVal = st.subject;
+    timerDateVal = st.date;
+    const sel = document.getElementById('timerSubject');
+    if(sel && store.subjects.includes(st.subject)) sel.value = st.subject;
+    const startBtn = document.getElementById('timerStartBtn');
+    const stopBtn = document.getElementById('timerStopBtn');
+    if(startBtn) startBtn.disabled = true;
+    if(stopBtn) stopBtn.disabled = false;
+    clearInterval(timerInterval);
+    timerInterval = setInterval(tickTimerDisplay, 1000);
+    tickTimerDisplay();
+  }catch(e){ /* ignore corrupt state */ }
+}
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'visible') tickTimerDisplay();
+});
 
 /* ---------- Settings: subject management ---------- */
 function renderSubjectManageList(){
@@ -1128,7 +1185,7 @@ function loadDay(){
   studyCalCursor = null;
   renderStudyMonthCalendar();
   renderCountdown();
-  resetTimer();
+  if(!timerRunning) resetTimer();
 }
 
 /* ---------- Tasks ---------- */
@@ -1597,6 +1654,7 @@ function importJSON(e){
 setupRingsCanvas();
 bindAutosave();
 loadDay();
+restoreTimerIfRunning();
 initSync();
 </script>
 </body>
