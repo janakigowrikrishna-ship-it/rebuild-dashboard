@@ -1667,17 +1667,69 @@ const DAY_VIBE_LINES = {
     "Not every day is a climb. Some are just about breathing."
   ]
 };
-function dayVibeLine(d, f, p, dateStr){
-  const scored = [d, f, p].filter(v=>v!==null);
-  if(!scored.length) return '';
-  const overall = scored.reduce((a,b)=>a+b,0)/scored.length;
+const MONTH_VIBE_LINES = {
+  Excelling: [
+    "This was a month I showed up for myself, fully.",
+    "A month I can be proud of, quietly.",
+    "Every week added up to something real this month.",
+    "A month I actually meant.",
+    "This is what a month of choosing myself looks like."
+  ],
+  Hardworking: [
+    "Not a perfect month, but a real one.",
+    "I kept choosing myself, even on the hard weeks.",
+    "This month wasn't easy, and I still showed up.",
+    "Some weeks were harder than others. I stayed anyway.",
+    "A month of real effort, not perfect effort."
+  ],
+  Surviving: [
+    "This month was about staying afloat, and I did.",
+    "I didn't give up this month, even when it was slow.",
+    "A quieter month — still one I lived through, on my terms.",
+    "Not every month is a climb. I made it through this one.",
+    "This month asked a lot. I gave what I had."
+  ]
+};
+const RANGE_VIBE_LINES = {
+  Excelling: [
+    "This stretch, I kept my word to myself, again and again.",
+    "Consistency isn't loud. This is what it looks like.",
+    "Months of showing up, one day at a time.",
+    "This is what steady looks like, over time."
+  ],
+  Hardworking: [
+    "Not every month was easy, but I kept going.",
+    "Imperfect months, real progress.",
+    "This stretch had rough patches, and I stayed in it.",
+    "Real effort, spread across real time."
+  ],
+  Surviving: [
+    "These months weren't about doing more — just not giving up.",
+    "I stayed in it, even through the slow months.",
+    "Still here, still going — that's this stretch's whole story.",
+    "Some seasons are just about not disappearing."
+  ]
+};
+// Shared picker behind all vibe lines: classifies an overall score, picks a
+// line deterministically from a seed string so the same day/month/range
+// always shows the same line, and stays silent on Underperforming rather
+// than guessing at wording for a hard stretch that isn't ours to phrase.
+function pickVibeLine(overall, seedStr, lineSet){
+  if(overall === null) return '';
   const label = classifyPct(overall);
-  const lines = DAY_VIBE_LINES[label];
-  if(!lines) return ''; // Underperforming or unrecognized — say nothing
+  const lines = lineSet[label];
+  if(!lines) return '';
   let hash = 0;
-  for(let i=0;i<dateStr.length;i++) hash = (hash*31 + dateStr.charCodeAt(i)) >>> 0;
+  for(let i=0;i<seedStr.length;i++) hash = (hash*31 + seedStr.charCodeAt(i)) >>> 0;
   const line = lines[hash % lines.length];
   return `<div style="font-size:12px;font-style:italic;opacity:.8;margin:2px 0 4px;">${line}</div>`;
+}
+function overallOf(d, f, p){
+  const scored = [d, f, p].filter(v=>v!==null);
+  return scored.length ? scored.reduce((a,b)=>a+b,0)/scored.length : null;
+}
+function dayVibeLine(d, f, p, dateStr){
+  return pickVibeLine(overallOf(d,f,p), dateStr, DAY_VIBE_LINES);
 }
 function openShareModal(){
   const scores = dayCategoryScores(day);
@@ -1711,9 +1763,11 @@ function openConsistencyModal(range){
     const monthLabel = monthCursor.toLocaleDateString('en-IN',{month:'long', year:'numeric'});
     const buckets = {Excelling:0,Hardworking:0,Surviving:0,Underperforming:0};
     overallScores.forEach(v=>{ const l = classifyPct(v); if(l) buckets[l]++; });
+    const vibeLine = pickVibeLine(overallOf(avgD,avgF,avgP), monthLabel, MONTH_VIBE_LINES);
     document.getElementById('consistencyCardContent').innerHTML = `
       ${shareBrandTop()}
       <div class="share-card-mid">
+        ${vibeLine}
         <div class="share-date">${monthLabel}</div>
         ${tripleRingSVG(avgD, avgF, avgP, 160)}
         ${shareRingLegend(avgD, avgF, avgP)}
@@ -1727,19 +1781,27 @@ function openConsistencyModal(range){
     // Multi-month trend card: a small ring per month, same data as the History trend row.
     const baseY = monthCursor.getFullYear(), baseM = monthCursor.getMonth();
     const cells = [];
+    const monthOveralls = [];
     for(let i=range-1; i>=0; i--){
       const d = new Date(baseY, baseM - i, 1);
       const {dScores, fScores, pScores} = monthScores(d.getFullYear(), d.getMonth(), 'whole');
       const avgD = dScores.length ? avg(dScores) : null;
       const avgF = fScores.length ? avg(fScores) : null;
       const avgP = pScores.length ? avg(pScores) : null;
+      const monthOverall = overallOf(avgD, avgF, avgP);
+      if(monthOverall !== null) monthOveralls.push(monthOverall);
       const label = d.toLocaleDateString('en-IN', {month:'short'});
       cells.push(`<div style="display:flex;flex-direction:column;align-items:center;gap:3px;">${tripleRingSVG(avgD, avgF, avgP, 46)}<span style="font-size:9px;opacity:.8;">${label}</span></div>`);
     }
     const rangeLabel = `Last ${range} months`;
+    // The line reflects the average of each month's overall — a fair read on
+    // the whole stretch rather than being dragged by any single month.
+    const rangeOverall = monthOveralls.length ? monthOveralls.reduce((a,b)=>a+b,0)/monthOveralls.length : null;
+    const vibeLine = pickVibeLine(rangeOverall, rangeLabel+monthCursor.getFullYear(), RANGE_VIBE_LINES);
     document.getElementById('consistencyCardContent').innerHTML = `
       ${shareBrandTop()}
       <div class="share-card-mid">
+        ${vibeLine}
         <div class="share-date">${rangeLabel}</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:260px;">${cells.join('')}</div>
         ${shareColorKey()}
@@ -1757,9 +1819,16 @@ function closeConsistencyModal(){ document.getElementById('consistencyModal').st
 function openCalendarShareModal(){
   const monthLabel = monthCursor.toLocaleDateString('en-IN',{month:'long', year:'numeric'});
   const gridHTML = document.getElementById('monthGrid').innerHTML;
+  const y = monthCursor.getFullYear(), m = monthCursor.getMonth();
+  const {dScores, fScores, pScores} = monthScores(y, m, 'whole');
+  const avgD = dScores.length ? avg(dScores) : null;
+  const avgF = fScores.length ? avg(fScores) : null;
+  const avgP = pScores.length ? avg(pScores) : null;
+  const vibeLine = pickVibeLine(overallOf(avgD,avgF,avgP), monthLabel, MONTH_VIBE_LINES);
   document.getElementById('calendarShareContent').innerHTML = `
     ${shareBrandTop()}
     <div class="share-card-mid" style="width:100%;">
+      ${vibeLine}
       <div class="share-date">${monthLabel}</div>
       <div class="month-grid" style="width:100%;">${gridHTML}</div>
       ${shareColorKey()}
