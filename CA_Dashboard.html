@@ -452,7 +452,13 @@ a{text-decoration:none;color:inherit;}
           <div class="card">
             <h3><span class="dot" style="background:var(--rose)"></span> Reading</h3>
             <div class="row">
-              <div class="field"><label>Book title</label><input type="text" id="bookTitle" placeholder="What are you reading?"></div>
+              <div class="field">
+                <label>Book title</label>
+                <div style="display:flex;gap:6px;">
+                  <input type="text" id="bookTitle" placeholder="What are you reading?" style="flex:1;">
+                  <button type="button" onclick="useSameBookAsPrevious()" title="Copy the book title from the last day it was logged" style="flex-shrink:0;background:var(--card2);border:1px solid var(--line);border-radius:9px;padding:0 12px;font-size:11.5px;color:var(--lav-deep);cursor:pointer;white-space:nowrap;">↺ Same as previous</button>
+                </div>
+              </div>
               <div class="field"><label>Minutes read (target 30)</label><input type="number" id="readMin"></div>
             </div>
           </div>
@@ -559,20 +565,33 @@ a{text-decoration:none;color:inherit;}
 
       <div class="card">
         <h3>Time spent by subject</h3>
-        <div class="grid2" style="grid-template-columns:1fr 1fr 1fr;">
-          <div>
-            <div style="text-align:center;font-size:12px;color:var(--muted);font-weight:700;margin-bottom:6px;">Today</div>
-            <div class="chartbox" style="height:160px;"><canvas id="pieDay"></canvas></div>
+        <div class="row" style="align-items:flex-end;">
+          <div class="field" style="max-width:220px;">
+            <label>Range</label>
+            <select id="pieRangeSelect">
+              <option value="day">Day</option>
+              <option value="week">Week (trailing 7 days)</option>
+              <option value="month">Month to date</option>
+              <option value="3m">Last 3 months</option>
+              <option value="6m">Last 6 months</option>
+              <option value="12m">Last 12 months</option>
+              <option value="custom">Custom range…</option>
+            </select>
           </div>
-          <div>
-            <div style="text-align:center;font-size:12px;color:var(--muted);font-weight:700;margin-bottom:6px;">This week</div>
-            <div class="chartbox" style="height:160px;"><canvas id="pieWeek"></canvas></div>
+          <div class="field" id="pieUpToWrap" style="max-width:180px;">
+            <label>Up to date</label>
+            <input type="date" id="pieDateInput">
           </div>
-          <div>
-            <div style="text-align:center;font-size:12px;color:var(--muted);font-weight:700;margin-bottom:6px;">This month</div>
-            <div class="chartbox" style="height:160px;"><canvas id="pieMonth"></canvas></div>
+          <div class="field" id="pieFromWrap" style="max-width:180px;display:none;">
+            <label>From date</label>
+            <input type="date" id="pieFromInput">
+          </div>
+          <div class="field" id="pieToWrap" style="max-width:180px;display:none;">
+            <label>To date</label>
+            <input type="date" id="pieToInput">
           </div>
         </div>
+        <div class="chartbox" style="height:220px;max-width:320px;margin:0 auto;"><canvas id="pieChart"></canvas></div>
         <div class="legend-row" id="pieLegend" style="justify-content:center;"></div>
       </div>
 
@@ -970,6 +989,16 @@ function updateStudyTotals(){
     const badge = document.getElementById(badgeId);
     if(badge){ badge.textContent = cls.label; badge.style.background = cls.hex; }
   });
+}
+function useSameBookAsPrevious(){
+  const priorDates = Object.keys(store.days).filter(d=> d < selectedDate).sort().reverse();
+  const prior = priorDates.find(d=> store.days[d] && store.days[d].bookTitle && store.days[d].bookTitle.trim());
+  if(!prior){ alert('No earlier day has a book title logged yet.'); return; }
+  const title = store.days[prior].bookTitle;
+  document.getElementById('bookTitle').value = title;
+  day = ensureDay(selectedDate);
+  day.bookTitle = title;
+  saveStore();
 }
 function addSubjectFromToday(){
   const inp = document.getElementById('newSubject');
@@ -1541,6 +1570,24 @@ function datesFromMonthStart(endDateStr){
   }
   return arr;
 }
+function trailingMonths(monthsBack, endDateStr){
+  const end = new Date(endDateStr+'T00:00:00');
+  const start = new Date(end);
+  start.setMonth(start.getMonth() - monthsBack);
+  start.setDate(start.getDate() + 1);
+  return dateRangeList(start.toISOString().slice(0,10), endDateStr);
+}
+function dateRangeList(fromStr, toStr){
+  const arr = [];
+  if(!fromStr || !toStr || fromStr > toStr) return arr;
+  const d = new Date(fromStr+'T00:00:00');
+  const end = new Date(toStr+'T00:00:00');
+  while(d <= end){
+    arr.push(d.toISOString().slice(0,10));
+    d.setDate(d.getDate()+1);
+  }
+  return arr;
+}
 function sumSubjectHours(dateList){
   const totals = {};
   store.subjects.forEach(s=> totals[s]=0);
@@ -1568,10 +1615,37 @@ function mkPie(canvasId, totals){
     options:{ plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx=> hasAny ? `${ctx.label}: ${ctx.parsed}h` : 'No hours logged yet' } } } }
   });
 }
+function updatePieControlVisibility(){
+  const range = document.getElementById('pieRangeSelect').value;
+  const isCustom = range === 'custom';
+  document.getElementById('pieUpToWrap').style.display = isCustom ? 'none' : 'block';
+  document.getElementById('pieFromWrap').style.display = isCustom ? 'block' : 'none';
+  document.getElementById('pieToWrap').style.display = isCustom ? 'block' : 'none';
+}
 function renderSubjectPies(){
-  mkPie('pieDay', sumSubjectHours([selectedDate]));
-  mkPie('pieWeek', sumSubjectHours(trailingDates(7, selectedDate)));
-  mkPie('pieMonth', sumSubjectHours(datesFromMonthStart(selectedDate)));
+  const rangeSel = document.getElementById('pieRangeSelect');
+  const dateInp = document.getElementById('pieDateInput');
+  const fromInp = document.getElementById('pieFromInput');
+  const toInp = document.getElementById('pieToInput');
+  if(!rangeSel || !dateInp) return;
+  if(!dateInp.value) dateInp.value = selectedDate;
+  if(!toInp.value) toInp.value = selectedDate;
+  if(!fromInp.value) fromInp.value = trailingDates(7, selectedDate)[0];
+  updatePieControlVisibility();
+  const range = rangeSel.value;
+  let dates;
+  if(range === 'custom'){
+    dates = dateRangeList(fromInp.value, toInp.value);
+  } else {
+    const endDate = dateInp.value;
+    if(range === 'day') dates = [endDate];
+    else if(range === 'week') dates = trailingDates(7, endDate);
+    else if(range === 'month') dates = datesFromMonthStart(endDate);
+    else if(range === '3m') dates = trailingMonths(3, endDate);
+    else if(range === '6m') dates = trailingMonths(6, endDate);
+    else dates = trailingMonths(12, endDate);
+  }
+  mkPie('pieChart', sumSubjectHours(dates));
   const legend = document.getElementById('pieLegend');
   if(legend) legend.innerHTML = store.subjects.map(s=>`<span><i style="background:${subjColor(s)}"></i>${s}</span>`).join('');
 }
@@ -1838,6 +1912,10 @@ function importJSON(e){
 })();
 
 /* ---------- Init ---------- */
+document.getElementById('pieRangeSelect').addEventListener('change', renderSubjectPies);
+document.getElementById('pieDateInput').addEventListener('change', renderSubjectPies);
+document.getElementById('pieFromInput').addEventListener('change', renderSubjectPies);
+document.getElementById('pieToInput').addEventListener('change', renderSubjectPies);
 setupRingsCanvas();
 bindAutosave();
 loadDay();
