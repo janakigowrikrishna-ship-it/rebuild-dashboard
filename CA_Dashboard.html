@@ -232,6 +232,7 @@ a{text-decoration:none;color:inherit;}
     <div class="brand"><div class="icon">🎯</div><div><b>Rise</b><small>CA Prep Dashboard</small></div></div>
     <div class="navitem active" data-page="today" onclick="switchTab('today')"><span class="ic">🏠</span> Today</div>
     <div class="navitem" data-page="study" onclick="switchTab('study')"><span class="ic">📚</span> Study</div>
+    <div class="navitem" data-page="syllabus" onclick="switchTab('syllabus')"><span class="ic">📖</span> Syllabus</div>
     <div class="navitem" data-page="gym" onclick="switchTab('gym')"><span class="ic">🏋️</span> Gym</div>
     <div class="navitem" data-page="routine" onclick="switchTab('routine')"><span class="ic">🌙</span> Routine</div>
     <div class="navitem" data-page="correlations" onclick="switchTab('correlations')"><span class="ic">🔗</span> Correlations</div>
@@ -375,6 +376,14 @@ a{text-decoration:none;color:inherit;}
       </div>
     </div>
 
+    <!-- SYLLABUS -->
+    <div class="page" id="page-syllabus">
+      <div class="card">
+        <p style="color:var(--muted);font-size:13px;margin:0;">Track topic-by-topic coverage for each subject — separate from daily hours. Add topics as you go through your syllabus and check them off as you cover them.</p>
+      </div>
+      <div id="syllabusList"></div>
+    </div>
+
     <!-- GYM -->
     <div class="page" id="page-gym">
       <div class="grid2">
@@ -508,6 +517,11 @@ a{text-decoration:none;color:inherit;}
         </div>
         <div class="corr-note" id="corrSleepStudyNote"></div>
       </div>
+      <div class="card">
+        <h3>📖 Time spent vs topics covered</h3>
+        <div class="sub" style="color:var(--muted);font-size:12px;margin-bottom:10px;">How much study time is translating into syllabus progress, per subject.</div>
+        <div id="corrTimeTopics"></div>
+      </div>
     </div>
 
     <!-- HEATMAP -->
@@ -541,7 +555,32 @@ a{text-decoration:none;color:inherit;}
     <!-- TRENDS -->
     <div class="page" id="page-trends">
       <div class="kpis" id="kpiRow"></div>
-      <div class="card"><p style="color:var(--muted);font-size:13px;margin:0;">Every metric has its own trend graph inside its tab — Study, Gym, and Routine. This page is just the 14-day headline summary.</p></div>
+      <div class="card"><p style="color:var(--muted);font-size:13px;margin:0;">Every metric has its own trend graph inside its tab — Study, Gym, and Routine. This page is just the 14-day headline summary, plus subject-wise breakdowns below.</p></div>
+
+      <div class="card">
+        <h3>Time spent by subject</h3>
+        <div class="grid2" style="grid-template-columns:1fr 1fr 1fr;">
+          <div>
+            <div style="text-align:center;font-size:12px;color:var(--muted);font-weight:700;margin-bottom:6px;">Today</div>
+            <div class="chartbox" style="height:160px;"><canvas id="pieDay"></canvas></div>
+          </div>
+          <div>
+            <div style="text-align:center;font-size:12px;color:var(--muted);font-weight:700;margin-bottom:6px;">This week</div>
+            <div class="chartbox" style="height:160px;"><canvas id="pieWeek"></canvas></div>
+          </div>
+          <div>
+            <div style="text-align:center;font-size:12px;color:var(--muted);font-weight:700;margin-bottom:6px;">This month</div>
+            <div class="chartbox" style="height:160px;"><canvas id="pieMonth"></canvas></div>
+          </div>
+        </div>
+        <div class="legend-row" id="pieLegend" style="justify-content:center;"></div>
+      </div>
+
+      <div class="card">
+        <h3>Syllabus progress by subject</h3>
+        <div class="sub" style="color:var(--muted);font-size:12px;margin-bottom:10px;">Topics covered vs. total, from the Syllabus tab.</div>
+        <div id="syllabusRings" style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center;"></div>
+      </div>
     </div>
 
     <!-- HISTORY -->
@@ -625,11 +664,32 @@ const SYNC_DOC_ID = "brother-ca-dashboard";
 let db = null;
 let applyingRemote = false;
 let pendingPush = null;
+let lastAppliedPayload = null;
+let pendingRemoteApply = null;
 
 function setSyncStatus(text, color){
   const el = document.getElementById('syncStatus');
   if(el){ el.textContent = text; el.style.color = color || 'var(--muted)'; }
 }
+
+function applyRemotePayload(payloadStr){
+  applyingRemote = true;
+  store = JSON.parse(payloadStr);
+  normalizeStore();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+  lastAppliedPayload = payloadStr;
+  loadDay();
+  applyingRemote = false;
+}
+// If a remote update arrived while the user had a field focused, apply it as soon as
+// they move on (blur) instead of yanking the field out from under them mid-keystroke.
+document.addEventListener('blur', ()=>{
+  if(pendingRemoteApply){
+    const p = pendingRemoteApply;
+    pendingRemoteApply = null;
+    applyRemotePayload(p);
+  }
+}, true);
 
 function initSync(){
   try{
@@ -646,12 +706,28 @@ function initSync(){
       if(snap.exists){
         const remote = snap.data();
         if(remote && remote.payload){
-          applyingRemote = true;
-          store = JSON.parse(remote.payload);
-          normalizeStore();
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
-          loadDay();
-          applyingRemote = false;
+          // Firestore fires this listener for our OWN writes too (an immediate local echo,
+          // then again once the server confirms). Reloading the whole page on that echo was
+          // wiping out whatever the user was actively typing. Only rebuild the UI from a
+          // snapshot that didn't originate from our own pending write.
+          if(snap.metadata.hasPendingWrites){
+            setSyncStatus('☁️ Synced', '#9dae8c');
+            return;
+          }
+          const incoming = remote.payload;
+          if(incoming === lastAppliedPayload){
+            setSyncStatus('☁️ Synced', '#9dae8c');
+            return;
+          }
+          const activeTag = document.activeElement ? document.activeElement.tagName : null;
+          const isEditing = activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT';
+          if(isEditing){
+            // Don't yank the field out from under an active edit — apply it right after.
+            pendingRemoteApply = incoming;
+            setSyncStatus('☁️ Synced', '#9dae8c');
+            return;
+          }
+          applyRemotePayload(incoming);
         }
       } else {
         pushToCloud();
@@ -668,14 +744,21 @@ function initSync(){
 }
 
 function pushToCloud(){
-  if(!db || applyingRemote) return;
+  if(!db || applyingRemote || typeof firebase === 'undefined') return;
   clearTimeout(pendingPush);
   pendingPush = setTimeout(()=>{
-    db.collection('rebuild').doc(SYNC_DOC_ID).set({
-      payload: JSON.stringify(store),
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    }).then(()=> setSyncStatus('☁️ Synced', '#9dae8c'))
-      .catch(err=>{ console.error(err); setSyncStatus('⚠️ Could not sync', '#c99fb0'); });
+    try{
+      const payload = JSON.stringify(store);
+      lastAppliedPayload = payload;
+      db.collection('rebuild').doc(SYNC_DOC_ID).set({
+        payload,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(()=> setSyncStatus('☁️ Synced', '#9dae8c'))
+        .catch(err=>{ console.error(err); setSyncStatus('⚠️ Could not sync', '#c99fb0'); });
+    }catch(err){
+      console.error(err);
+      setSyncStatus('⚠️ Could not sync', '#c99fb0');
+    }
   }, 500);
 }
 
@@ -843,10 +926,8 @@ function renderSubjectFields(){
         <input type="checkbox" class="subj-mocktaken" data-subj="${subj}" ${rec.mockTaken? 'checked':''}>
         <label>Took a mock test today for ${subj}</label>
       </div>
-      <div class="topics-holder" data-subj-topics="${subj}"></div>
     `;
     el.appendChild(row);
-    renderTopicsForSubject(subj, row.querySelector('.topics-holder'));
   });
   el.querySelectorAll('.subj-hours').forEach(inp=>{
     inp.addEventListener('input', debounce(()=>{ updateSubject(inp.dataset.subj, 'hours', inp.value===''? 0 : +inp.value); }, 700));
@@ -858,6 +939,18 @@ function renderSubjectFields(){
     cb.addEventListener('change', ()=>{ updateSubject(cb.dataset.subj, 'mockTaken', cb.checked); renderSubjectFields(); });
   });
   refreshTimerSubjectOptions();
+}
+function renderSyllabusPage(){
+  const el = document.getElementById('syllabusList');
+  if(!el) return;
+  el.innerHTML = '';
+  store.subjects.forEach(subj=>{
+    const card = document.createElement('div'); card.className = 'card';
+    card.innerHTML = `<h3><span class="subject-chip" style="background:${subjColor(subj)}"></span>${subj}</h3>
+      <div class="topics-holder" data-subj-topics="${subj}"></div>`;
+    el.appendChild(card);
+    renderTopicsForSubject(subj, card.querySelector('.topics-holder'));
+  });
 }
 function updateSubject(subj, key, val){
   day = ensureDay(selectedDate);
@@ -1359,6 +1452,7 @@ function switchTab(name){
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active', p.id==='page-'+name));
   document.getElementById('sidebar').classList.remove('open');
   if(name==='study'){ renderCharts(); renderStudyMonthCalendar(); }
+  if(name==='syllabus') renderSyllabusPage();
   if(name==='gym') renderCharts();
   if(name==='routine') renderCharts();
   if(name==='trends') renderCharts();
@@ -1436,6 +1530,76 @@ function mkWeightChart(){
     options:{ plugins:{legend:{display:false}}, scales:{ y:{ ticks:{color:'#8C7F94'}, grid:{color:'#E6DCCB'} }, x:{ ticks:{color:'#8C7F94'}, grid:{display:false} } } }
   });
 }
+function trailingDates(n, endDateStr){
+  const arr=[]; for(let i=n-1;i>=0;i--){ const d=new Date(endDateStr); d.setDate(d.getDate()-i); arr.push(d.toISOString().slice(0,10)); } return arr;
+}
+function datesFromMonthStart(endDateStr){
+  const d = new Date(endDateStr);
+  const arr=[];
+  for(let dnum=1; dnum<=d.getDate(); dnum++){
+    arr.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(dnum).padStart(2,'0')}`);
+  }
+  return arr;
+}
+function sumSubjectHours(dateList){
+  const totals = {};
+  store.subjects.forEach(s=> totals[s]=0);
+  dateList.forEach(ds=>{
+    const rec = store.days[ds];
+    if(rec && rec.subjects){
+      store.subjects.forEach(s=>{ totals[s] += (+rec.subjects[s]?.hours || 0); });
+    }
+  });
+  return totals;
+}
+function mkPie(canvasId, totals){
+  const canvas = document.getElementById(canvasId);
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const labels = store.subjects;
+  const data = labels.map(s=> Math.round((totals[s]||0)*10)/10);
+  const hasAny = data.some(v=>v>0);
+  if(charts[canvasId]) charts[canvasId].destroy();
+  charts[canvasId] = new Chart(ctx, {
+    type:'pie',
+    data: hasAny
+      ? { labels, datasets:[{ data, backgroundColor: labels.map(subjColor), borderWidth:1, borderColor:'#FFFDFA' }] }
+      : { labels:['No hours logged'], datasets:[{ data:[1], backgroundColor:['#E6DCCB'], borderWidth:1, borderColor:'#FFFDFA' }] },
+    options:{ plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx=> hasAny ? `${ctx.label}: ${ctx.parsed}h` : 'No hours logged yet' } } } }
+  });
+}
+function renderSubjectPies(){
+  mkPie('pieDay', sumSubjectHours([selectedDate]));
+  mkPie('pieWeek', sumSubjectHours(trailingDates(7, selectedDate)));
+  mkPie('pieMonth', sumSubjectHours(datesFromMonthStart(selectedDate)));
+  const legend = document.getElementById('pieLegend');
+  if(legend) legend.innerHTML = store.subjects.map(s=>`<span><i style="background:${subjColor(s)}"></i>${s}</span>`).join('');
+}
+function totalHoursLoggedForSubject(subj){
+  let total = 0;
+  Object.values(store.days).forEach(rec=>{
+    if(rec && rec.subjects && rec.subjects[subj]) total += (+rec.subjects[subj].hours || 0);
+  });
+  return Math.round(total*10)/10;
+}
+function renderSyllabusRings(){
+  const el = document.getElementById('syllabusRings');
+  if(!el) return;
+  el.innerHTML = store.subjects.map(s=>{
+    const topics = ensureTopics(s);
+    const total = topics.length;
+    const done = topics.filter(t=>t.done).length;
+    const p = total? Math.round(done/total*100) : 0;
+    const color = subjColor(s);
+    return `<div style="text-align:center;">
+      <div style="width:80px;height:80px;border-radius:50%;background:conic-gradient(${color} ${p*3.6}deg, var(--card2) 0deg);display:flex;align-items:center;justify-content:center;margin:0 auto;">
+        <div style="width:58px;height:58px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:var(--text);">${p}%</div>
+      </div>
+      <div style="font-size:11.5px;margin-top:6px;font-weight:600;">${s}</div>
+      <div style="font-size:10.5px;color:var(--muted);">${done}/${total} topics</div>
+    </div>`;
+  }).join('');
+}
 function renderCharts(){
   mkMultiChart('chartStudySubjects', rec => rec ? (rec.hours || 0) : null, null, 'studyLegend');
   mkMultiChart('chartMockSubjects', rec => (rec && rec.mockTaken && rec.mockScore!=='') ? rec.mockScore : null, null, 'mockLegend');
@@ -1446,6 +1610,8 @@ function renderCharts(){
   mkChart('chartBurnt','Calories burnt', r=>r.caloriesBurnt, store.targets.burnt, '#7C63A6');
   mkChart('chartProtein','Protein (g)', r=>proteinTotalFor(r), store.targets.protein, '#C99FB0');
   mkWeightChart();
+  renderSubjectPies();
+  renderSyllabusRings();
   renderKPIs();
 }
 function renderKPIs(){
@@ -1510,6 +1676,27 @@ function renderCorrelations(){
   document.getElementById('corrSleepStudyNote').textContent = r===null
     ? 'Log more days with both sleep and study hours to see this correlation.'
     : `Based on ${paired.length} logged days, sleep and study hours show ${interpretR(r)} (r = ${r.toFixed(2)}, where +1 is a perfect positive link and -1 a perfect inverse one).`;
+
+  const ttEl = document.getElementById('corrTimeTopics');
+  if(ttEl){
+    ttEl.innerHTML = store.subjects.map(s=>{
+      const hrs = totalHoursLoggedForSubject(s);
+      const topics = ensureTopics(s);
+      const total = topics.length, done = topics.filter(t=>t.done).length;
+      const perTopic = done>0 ? (hrs/done).toFixed(1) : null;
+      const note = total===0
+        ? 'No topics added yet in Syllabus.'
+        : done===0
+          ? `${hrs}h logged so far, no topics marked done yet.`
+          : `~${perTopic}h of study time per topic covered.`;
+      return `<div class="month-count-row">
+        <span class="swatch" style="background:${subjColor(s)}"></span>
+        <span class="mc-label">${s}</span>
+        <span class="mc-count">${hrs}h</span>
+        <span class="mc-remark">${done}/${total} topics — ${note}</span>
+      </div>`;
+    }).join('');
+  }
 }
 
 /* ---------- Heatmap ---------- */
