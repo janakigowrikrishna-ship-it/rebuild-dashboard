@@ -202,6 +202,11 @@
   }
 
   .history-link{font-size:11.5px; color:var(--teal); font-weight:700; margin-top:6px; cursor:pointer;}
+  .card-last-updated{
+    font-size:10.5px; color:var(--muted); margin-top:6px; cursor:pointer;
+    display:inline-block; border-bottom:1px dashed var(--border);
+  }
+  .card-last-updated:hover{color:var(--teal); border-color:var(--teal);}
 
   .history-filter-note{
     font-size:12px; color:var(--muted); font-weight:600; margin-bottom:10px; text-align:center;
@@ -1269,6 +1274,14 @@ function entryCardHTML(type, e){
     historyLine = `<div class="history-link" onclick="viewHistoryFor('${e.id}')">${e.history.length} payment${e.history.length>1?'s':''} logged — view log ›</div>`;
   }
 
+  // Per-card "last updated" — auto-stamped whenever this entry is created,
+  // edited, or has a payment/prepayment logged against it, but also directly
+  // clickable to correct by hand (e.g. "I actually updated this on the 5th").
+  const cardLU = e.lastUpdated
+    ? new Date(e.lastUpdated).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' })
+    : '—';
+  const cardLastUpdatedLine = `<div class="card-last-updated" onclick="editEntryLastUpdated('${type}','${e.id}')">Last updated: ${cardLU}</div>`;
+
   const payLabel = type === 'bank' ? 'Mark EMI Paid' : 'Log Payment';
   const payButton = (type === 'bank' && isUpcoming(e))
     ? `<button disabled style="opacity:0.5; cursor:not-allowed;">Not started yet</button>`
@@ -1303,6 +1316,7 @@ function entryCardHTML(type, e){
     </div>
     ${progressHTML}
     ${historyLine}
+    ${cardLastUpdatedLine}
     <div class="entry-actions">
       ${payButton}
       ${prepayButton}
@@ -1463,6 +1477,26 @@ function editEntry(type, id){
   openModal(type, id);
 }
 
+// Uses a prompt() rather than an inline input — every card can trigger this,
+// and a blocking native dialog sidesteps having to guard against a render()
+// (e.g. from a Firestore update landing mid-edit) wiping out an in-progress
+// inline edit, which would otherwise need per-card tracking to avoid.
+function editEntryLastUpdated(type, id){
+  const e = state[type].find(x=>x.id===id);
+  if(!e) return;
+  const current = e.lastUpdated || new Date().toISOString().slice(0,10);
+  const val = prompt(`Set "last updated" for "${e.name}" (YYYY-MM-DD):`, current);
+  if(val === null) return;
+  const parsed = new Date(val.trim());
+  if(isNaN(parsed.getTime())){
+    alert('Could not understand that date — try a format like 2026-07-15.');
+    return;
+  }
+  e.lastUpdated = parsed.toISOString().slice(0,10);
+  render();
+  queueSave();
+}
+
 function saveEntry(){
   const name = document.getElementById('fName').value.trim();
   if(!name){ alert('Please enter a name.'); return; }
@@ -1484,26 +1518,29 @@ function saveEntry(){
     const startDate = document.getElementById('fStartDate').value || '';
     const priority = document.getElementById('fPriority').value || 'medium';
 
+    const todayISO = new Date().toISOString().slice(0,10);
     if(editingId){
       const e = state.bank.find(x=>x.id===editingId);
       e.name = name; e.emi = emi; e.months = months; e.totalEmis = totalEmis;
       e.dueDay = dueDay; e.interestRate = interestRate; e.startDate = startDate;
-      e.priority = priority; e.notes = notes;
+      e.priority = priority; e.notes = notes; e.lastUpdated = todayISO;
     } else {
       state.bank.push({
         id: uid(), name, emi, months, totalEmis, dueDay, interestRate, startDate,
-        priority, notes, history: []
+        priority, notes, history: [], lastUpdated: todayISO
       });
     }
   } else {
+    const todayISO = new Date().toISOString().slice(0,10);
     if(editingId){
       const e = state[modalType].find(x=>x.id===editingId);
       e.name = name; e.pending = amountVal; e.returnDate = returnDate; e.notes = notes;
+      e.lastUpdated = todayISO;
       if(!e.totalAmount || amountVal > e.totalAmount) e.totalAmount = amountVal;
     } else {
       state[modalType].push({
         id: uid(), name, pending: amountVal, totalAmount: amountVal,
-        returnDate, notes, history: []
+        returnDate, notes, history: [], lastUpdated: todayISO
       });
     }
   }
@@ -1548,6 +1585,7 @@ function logPayment(type, id){
     e.months = Math.max(0, (Number(e.months)||0) - 1);
     e.history = e.history || [];
     e.history.unshift({ date: new Date().toISOString().slice(0,10), amount: amt });
+    e.lastUpdated = new Date().toISOString().slice(0,10);
 
     lastAction = { type, id, kind: 'bank', monthsDelta: 1 };
     showUndoToast(`EMI marked paid for ${e.name}.`);
@@ -1561,6 +1599,7 @@ function logPayment(type, id){
     e.pending = Math.max(0, pending - amt);
     e.history = e.history || [];
     e.history.unshift({ date: new Date().toISOString().slice(0,10), amount: amt });
+    e.lastUpdated = new Date().toISOString().slice(0,10);
 
     lastAction = { type, id, kind: 'friend', pendingDelta: amt };
     showUndoToast(`Payment of ${fmt(amt)} logged for ${e.name}.`);
@@ -1631,6 +1670,7 @@ function applyPrepayment(id, amt){
   e.totalInterestSaved = (Number(e.totalInterestSaved)||0) + interestSaved;
   e.history = e.history || [];
   e.history.unshift({ date: new Date().toISOString().slice(0,10), amount: amt, type: 'prepay' });
+  e.lastUpdated = new Date().toISOString().slice(0,10);
 
   lastAction = { type: 'bank', id, kind: 'prepay', monthsDelta: emisReduced, prepaidDelta: amt, interestSavedDelta: interestSaved };
 
