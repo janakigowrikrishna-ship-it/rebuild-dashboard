@@ -34,12 +34,27 @@
   .header-left{min-width:0;}
   .header-right{text-align:right; flex-shrink:0;}
   .today-date{font-size:18px; color:var(--ink); font-weight:800; letter-spacing:-0.2px;}
-  .next-emi-note{font-size:12px; color:var(--marigold); font-weight:700; margin-top:4px; max-width:200px;}
-  .next-emi-note.overdue{color:var(--danger);}
-  .next-emi-note.calm{color:var(--teal); font-weight:600;}
+  .last-updated{
+    font-size:10.5px; color:var(--muted); margin-top:3px; font-weight:600;
+    cursor:pointer; border-bottom:1px dashed var(--muted); display:inline-block;
+  }
+  .last-updated:hover{color:var(--teal); border-color:var(--teal);}
+  .last-updated-edit{
+    font-size:11px; padding:3px 6px; border:1px solid var(--border); border-radius:6px;
+    font-family:inherit; background:#fff; color:var(--ink);
+  }
+  .last-updated-reset{font-size:10px; color:var(--teal); font-weight:700; margin-left:4px; cursor:pointer; text-decoration:underline;}
   #syncStatus{font-size:11px; margin-top:4px; color:var(--muted);}
   #syncStatus.ok{color:var(--good);}
   #syncStatus.err{color:var(--danger);}
+
+  .hero-banner{
+    text-align:center; font-weight:800; font-size:14.5px; padding:12px 10px 2px; letter-spacing:-0.1px;
+  }
+  .hero-banner.overdue{color:var(--danger);}
+  .hero-banner.soon{color:var(--marigold);}
+  .hero-banner.upcoming{color:var(--teal);}
+  .hero-banner.calm{color:var(--muted); font-weight:600;}
 
   .reminder-banner{
     background:#FCEFE0; border:1px solid #F0D6A8; color:#8A5A12;
@@ -53,6 +68,13 @@
   }
 
   .wrap{max-width:900px; margin:0 auto; padding:16px;}
+
+  .tabs{display:flex; gap:8px; margin-bottom:16px;}
+  .tab-btn{
+    flex:1; padding:9px; border-radius:10px; border:1px solid var(--border);
+    background:#fff; font-weight:700; font-size:13px; color:var(--muted); cursor:pointer;
+  }
+  .tab-btn.active{background:var(--ink); color:#fff; border-color:var(--ink);}
 
   .summary-grid{
     display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:22px;
@@ -76,6 +98,63 @@
   }
   .block-header h2{font-size:15px; margin:0; font-weight:800;}
   .block-header .tag{font-size:11px; color:var(--muted); font-weight:600;}
+  .prepay-hint{font-size:11px; color:var(--teal); font-weight:700; margin-top:3px;}
+  .debt-free-note{text-align:center; font-size:12px; color:var(--teal); font-weight:700; margin:-14px 0 20px;}
+  .sort-row{display:flex; align-items:center; gap:8px; margin-bottom:12px;}
+  .sort-row label{font-size:11.5px; color:var(--muted); font-weight:700; flex-shrink:0;}
+  .sort-row select{
+    flex:1; padding:6px 8px; border:1px solid var(--border); border-radius:8px;
+    font-size:12px; font-family:inherit; background:#FBF7F1; color:var(--ink);
+  }
+  .overall-progress{margin:-10px 0 20px;}
+  .overall-progress .label{text-align:center; font-size:12px; color:var(--muted); font-weight:700;}
+  .overall-progress .bar-track{height:8px; background:var(--border); border-radius:4px; overflow:hidden; margin-top:6px;}
+  .overall-progress .bar-fill{height:100%; background:var(--teal); border-radius:4px;}
+  .surplus-panel{margin-bottom:12px;}
+  .surplus-panel label{font-size:11.5px; color:var(--muted); font-weight:700; display:block; margin-bottom:6px;}
+  .surplus-panel .surplus-row{display:flex; gap:8px; align-items:flex-start;}
+  .surplus-panel input{
+    flex:1; padding:8px 10px; border:1px solid var(--border); border-radius:8px;
+    font-size:13px; font-family:inherit; background:#FBF7F1; color:var(--ink);
+  }
+  .calendar-btn{
+    white-space:nowrap; padding:8px 10px; border:1px solid var(--border); border-radius:8px;
+    background:#fff; font-size:12px; font-weight:700; cursor:pointer; color:var(--ink);
+  }
+  .surplus-suggestion{font-size:12.5px; color:var(--ink); margin-top:8px; line-height:1.6;}
+  .priority-badge{
+    display:inline-block; font-size:10.5px; font-weight:800; padding:1px 7px;
+    border-radius:20px; margin-left:6px; vertical-align:middle;
+  }
+  .priority-badge.high{background:#FCEAE6; color:var(--danger);}
+  .priority-badge.low{background:#EFEAE0; color:var(--muted);}
+  .priority-badge.ranked{background:#E6F1EF; color:var(--teal);}
+  .priority-intro{font-size:12.5px; color:var(--muted); line-height:1.5; margin-bottom:14px;}
+  .priority-row{
+    display:flex; align-items:center; gap:10px; border:1px solid var(--border);
+    border-radius:12px; padding:10px 12px; margin-bottom:8px; background:#FFFDFA;
+  }
+  .priority-rank-input{
+    flex-shrink:0; width:40px; height:34px; border-radius:8px; background:var(--ink); color:#fff;
+    font-size:14px; font-weight:800; text-align:center; border:none; font-family:inherit;
+    -moz-appearance:textfield;
+  }
+  .priority-rank-input::-webkit-outer-spin-button,
+  .priority-rank-input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+  .priority-info{flex:1; min-width:0;}
+  .priority-name{font-weight:700; font-size:14px;}
+  .priority-meta{font-size:11.5px; color:var(--muted); margin-top:2px;}
+  .priority-type{
+    display:inline-block; font-size:10px; font-weight:800; padding:1px 6px; border-radius:20px;
+    background:#F0EBE2; color:var(--muted); margin-right:6px; vertical-align:middle;
+  }
+  .priority-amount{flex-shrink:0; font-weight:800; font-size:13.5px; color:var(--danger); margin-right:4px;}
+  .priority-arrows{display:flex; flex-direction:column; gap:3px; flex-shrink:0;}
+  .priority-arrows button{
+    width:26px; height:22px; border:1px solid var(--border); background:#fff; border-radius:6px;
+    font-size:11px; cursor:pointer; color:var(--ink); line-height:1; padding:0;
+  }
+  .priority-arrows button:disabled{opacity:0.3; cursor:not-allowed;}
   .add-btn{
     background:var(--ink); color:#fff; border:none; border-radius:10px;
     padding:7px 12px; font-size:12px; font-weight:700; cursor:pointer;
@@ -96,13 +175,14 @@
   .entry-meta .due-soon{color:var(--marigold); font-weight:700;}
   .entry-meta .due-overdue{color:var(--danger); font-weight:700;}
   .payoff-line{font-size:11.5px; color:var(--teal); font-weight:700; margin-top:4px;}
-  .entry-actions{display:flex; gap:6px; margin-top:10px;}
+  .entry-actions{display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;}
   .entry-actions button{
-    flex:1; border:1px solid var(--border); background:#fff; border-radius:8px;
+    flex:1 1 auto; min-width:80px; border:1px solid var(--border); background:#fff; border-radius:8px;
     padding:7px; font-size:12px; font-weight:600; cursor:pointer; color:var(--ink);
   }
   .entry-actions button.del{color:var(--danger); border-color:#F3D8D3;}
   .entry-actions button.pay{color:var(--good); border-color:#D2E8E4;}
+  .entry-actions button.prepay{color:var(--teal); border-color:#D2E8E4;}
   .empty-note{font-size:12.5px; color:var(--muted); text-align:center; padding:14px 0;}
   .cleared-toggle{
     font-size:12.5px; font-weight:700; color:var(--teal); text-align:center;
@@ -121,8 +201,19 @@
     padding:6px 12px; font-weight:800; font-size:12.5px; cursor:pointer; flex-shrink:0;
   }
 
-  .history-list{margin-top:8px; padding-top:8px; border-top:1px dashed var(--border); font-size:11.5px; color:var(--muted);}
-  .history-item{display:flex; justify-content:space-between; padding:2px 0;}
+  .history-link{font-size:11.5px; color:var(--teal); font-weight:700; margin-top:6px; cursor:pointer;}
+
+  .history-filter-note{
+    font-size:12px; color:var(--muted); font-weight:600; margin-bottom:10px; text-align:center;
+  }
+  .history-filter-note span{color:var(--teal); font-weight:800; cursor:pointer;}
+  .history-row{
+    display:flex; justify-content:space-between; align-items:center;
+    border:1px solid var(--border); border-radius:12px; padding:10px 12px;
+    margin-bottom:8px; background:#FFFDFA;
+  }
+  .history-name{font-weight:700; font-size:13.5px;}
+  .history-sub{font-size:11.5px; color:var(--muted); margin-top:2px;}
 
   /* modal */
   .overlay{
@@ -164,7 +255,6 @@
     height:6px; background:var(--border); border-radius:4px; margin-top:8px; overflow:hidden;
   }
   .progress-fill{height:100%; background:var(--teal); border-radius:4px;}
-  .entry-pending.owe ~ .progress-track .progress-fill,
   .progress-fill.owe{background:var(--coral);}
 </style>
 </head>
@@ -179,65 +269,108 @@
     </div>
     <div class="header-right">
       <div id="todayDate" class="today-date"></div>
-      <div id="nextEmiNote" class="next-emi-note"></div>
+      <div id="lastUpdated" class="last-updated" onclick="startEditLastUpdated()"></div>
     </div>
   </div>
 </header>
 
 <div class="wrap">
+  <div id="heroBanner" class="hero-banner"></div>
   <div id="reminderBanner" class="reminder-banner" style="display:none;"></div>
 
-  <div class="summary-grid">
-    <div class="summary-card owe">
-      <div class="label">You Owe (Total)</div>
-      <div class="value" id="totalOwe">₹0</div>
-    </div>
-    <div class="summary-card owed">
-      <div class="label">Owed To You</div>
-      <div class="value" id="totalOwed">₹0</div>
-    </div>
-    <div class="summary-card net">
-      <div class="label">Net Position</div>
-      <div class="value" id="netPosition">₹0</div>
-    </div>
+  <div class="tabs">
+    <button class="tab-btn active" id="tabDashboardBtn" onclick="switchTab('dashboard')">Dashboard</button>
+    <button class="tab-btn" id="tabPriorityBtn" onclick="switchTab('priority')">Priority List</button>
+    <button class="tab-btn" id="tabHistoryBtn" onclick="historyFilterId=null; switchTab('history')">Payment History</button>
   </div>
-  <div id="monthlyOutgo" class="monthly-outgo">Monthly EMI outgo: ₹0</div>
 
-  <!-- BANK LOANS / EMI -->
-  <section class="block">
-    <div class="block-header">
-      <div>
-        <h2>Bank Loans &amp; EMIs</h2>
-        <div class="tag" id="bankTotal">Total pending: ₹0</div>
+  <div id="dashboardView">
+    <div class="summary-grid">
+      <div class="summary-card owe">
+        <div class="label">You Owe (Total)</div>
+        <div class="value" id="totalOwe">₹0</div>
       </div>
-      <button class="add-btn" onclick="openModal('bank')">+ Add</button>
+      <div class="summary-card owed">
+        <div class="label">Owed To You</div>
+        <div class="value" id="totalOwed">₹0</div>
+      </div>
+      <div class="summary-card net">
+        <div class="label">Net Position</div>
+        <div class="value" id="netPosition">₹0</div>
+      </div>
     </div>
-    <div id="bankList"></div>
-  </section>
+    <div id="monthlyOutgo" class="monthly-outgo">Monthly EMI outgo: ₹0</div>
+    <div id="debtFreeNote" class="debt-free-note"></div>
+    <div id="overallProgress" class="overall-progress"></div>
 
-  <!-- BORROWED FROM FRIENDS -->
-  <section class="block">
-    <div class="block-header">
-      <div>
-        <h2>Money Borrowed (Friends)</h2>
-        <div class="tag" id="borrowedTotal">Total pending: ₹0</div>
+    <!-- BANK LOANS / EMI -->
+    <section class="block">
+      <div class="block-header">
+        <div>
+          <h2>Bank Loans &amp; EMIs</h2>
+          <div class="tag" id="bankTotal">Total pending: ₹0</div>
+          <div class="prepay-hint" id="bankPrepayHint"></div>
+        </div>
+        <button class="add-btn" onclick="openModal('bank')">+ Add</button>
       </div>
-      <button class="add-btn" onclick="openModal('borrowed')">+ Add</button>
-    </div>
-    <div id="borrowedList"></div>
-  </section>
+      <div class="sort-row">
+        <label for="bankSortSelect">Payoff order:</label>
+        <select id="bankSortSelect" onchange="setBankSortMode(this.value)">
+          <option value="due">Due Date (default)</option>
+          <option value="priority">My Priority</option>
+          <option value="avalanche">Highest Interest First (Avalanche)</option>
+          <option value="snowball">Smallest Balance First (Snowball)</option>
+        </select>
+      </div>
+      <div class="surplus-panel">
+        <label for="surplusAmount">Extra cash available this month (₹):</label>
+        <div class="surplus-row">
+          <input type="number" step="any" min="0" id="surplusAmount" placeholder="e.g. 10000" oninput="renderSurplusSuggestion()">
+          <button class="calendar-btn" onclick="openPayoffCalendar()">📅 Payoff Calendar</button>
+        </div>
+        <div id="surplusSuggestion" class="surplus-suggestion"></div>
+      </div>
+      <div id="bankList"></div>
+    </section>
 
-  <!-- LENT TO OTHERS -->
-  <section class="block">
-    <div class="block-header">
-      <div>
-        <h2>Money Lent (To Others)</h2>
-        <div class="tag" id="lentTotal">Total pending: ₹0</div>
+    <!-- BORROWED FROM FRIENDS -->
+    <section class="block">
+      <div class="block-header">
+        <div>
+          <h2>Money Borrowed (Friends)</h2>
+          <div class="tag" id="borrowedTotal">Total pending: ₹0</div>
+        </div>
+        <button class="add-btn" onclick="openModal('borrowed')">+ Add</button>
       </div>
-      <button class="add-btn" onclick="openModal('lent')">+ Add</button>
+      <div id="borrowedList"></div>
+    </section>
+
+    <!-- LENT TO OTHERS -->
+    <section class="block">
+      <div class="block-header">
+        <div>
+          <h2>Money Lent (To Others)</h2>
+          <div class="tag" id="lentTotal">Total pending: ₹0</div>
+        </div>
+        <button class="add-btn" onclick="openModal('lent')">+ Add</button>
+      </div>
+      <div id="lentList"></div>
+    </section>
+  </div>
+
+  <div id="priorityView" style="display:none;">
+    <div class="priority-intro">
+      Your own real-life order — type a number (1 = most urgent) or use the arrows to reorder loans and borrowed money exactly how you'd tackle them, regardless of interest rate or due date. This becomes "My Priority" in the Bank Loans payoff-order dropdown.
     </div>
-    <div id="lentList"></div>
-  </section>
+    <div id="priorityList"></div>
+  </div>
+
+  <div id="historyView" style="display:none;">
+    <div class="field">
+      <input type="text" id="historySearch" placeholder="Search by name..." oninput="renderHistoryView()">
+    </div>
+    <div id="historyList"></div>
+  </div>
 
 </div>
 
@@ -257,18 +390,42 @@
       <div class="field-row">
         <div class="field">
           <label>EMI Amount (₹ / month)</label>
-          <input type="number" step="any" id="fEmi" placeholder="0" oninput="updateCalcPreview()">
+          <input type="number" step="any" min="0" id="fEmi" placeholder="0" oninput="updateCalcPreview()">
         </div>
         <div class="field">
-          <label>Number of EMIs Remaining</label>
-          <input type="number" step="any" id="fMonths" placeholder="0" oninput="updateCalcPreview()">
+          <label>Total EMIs (tenure)</label>
+          <input type="number" step="1" min="0" id="fTotalEmis" placeholder="e.g. 60" oninput="updateCalcPreview()">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Already Paid — amount in ₹ (before tracking here)</label>
+          <input type="number" step="any" min="0" id="fPaidEmis" placeholder="e.g. 198000" oninput="updateCalcPreview()">
+        </div>
+        <div class="field">
+          <label>EMI Due Day of Month (1–31)</label>
+          <input type="number" id="fDueDay" placeholder="e.g. 5" min="1" max="31">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Interest Rate (% p.a., optional)</label>
+          <input type="number" step="any" min="0" id="fInterestRate" placeholder="e.g. 8.5">
+        </div>
+        <div class="field">
+          <label>Start Date (leave blank if already started)</label>
+          <input type="date" id="fStartDate">
         </div>
       </div>
       <div class="field">
-        <label>EMI Due Day of Month (1–31)</label>
-        <input type="number" id="fDueDay" placeholder="e.g. 5" min="1" max="31">
+        <label>Priority (for payoff planning)</label>
+        <select id="fPriority" style="width:100%; padding:10px 11px; border:1px solid var(--border); border-radius:10px; font-size:14px; font-family:inherit; background:#FBF7F1;">
+          <option value="medium">Medium</option>
+          <option value="high">High — pay off first</option>
+          <option value="low">Low — no rush</option>
+        </select>
       </div>
-      <div class="calc-preview" id="calcPreview">Total pending will auto-calculate: ₹0</div>
+      <div class="calc-preview" id="calcPreview">Remaining pending will auto-calculate: ₹0</div>
     </div>
 
     <!-- friend-only fields -->
@@ -291,6 +448,43 @@
     <div class="modal-actions">
       <button class="cancel" onclick="closeModal()">Cancel</button>
       <button class="save" onclick="saveEntry()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- WHAT IF SIMULATOR -->
+<div class="overlay" id="whatIfOverlay">
+  <div class="modal">
+    <button class="close-x" onclick="closeWhatIf()">✕</button>
+    <h3 id="whatIfTitle">What If?</h3>
+    <div class="field">
+      <label>One-time lump sum (₹, optional)</label>
+      <input type="number" step="any" min="0" id="wiLump" placeholder="0" oninput="computeWhatIf()">
+    </div>
+    <div class="field">
+      <label>Extra amount every month (₹, optional)</label>
+      <input type="number" step="any" min="0" id="wiExtra" placeholder="0" oninput="computeWhatIf()">
+    </div>
+    <div class="calc-preview" id="whatIfResult">Enter an amount below to see the impact on this loan.</div>
+    <div class="modal-actions">
+      <button class="cancel" onclick="closeWhatIf()">Close</button>
+      <button class="save" onclick="commitWhatIfLumpSum()">Log Lump Sum Now</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAYOFF CALENDAR -->
+<div class="overlay" id="calendarOverlay">
+  <div class="modal">
+    <button class="close-x" onclick="closePayoffCalendar()">✕</button>
+    <h3>Payoff Calendar</h3>
+    <div class="field">
+      <label>Extra amount per month, across all loans (₹, optional)</label>
+      <input type="number" step="any" min="0" id="calendarExtra" placeholder="e.g. 10000" oninput="computePayoffCalendar()">
+    </div>
+    <div class="calc-preview" id="calendarResult">Compares your current pace against Avalanche and Snowball strategies, which redirect a paid-off loan's freed-up EMI toward what's left.</div>
+    <div class="modal-actions">
+      <button class="cancel" onclick="closePayoffCalendar()">Close</button>
     </div>
   </div>
 </div>
@@ -326,7 +520,10 @@ let applyingRemoteMoney = false;
 try{
   const cached = JSON.parse(localStorage.getItem(MONEY_STORAGE_KEY) || 'null');
   if(cached && (cached.bank || cached.borrowed || cached.lent)){
-    state = { bank: cached.bank||[], borrowed: cached.borrowed||[], lent: cached.lent||[], updatedAt: cached.updatedAt||0 };
+    state = {
+      bank: cached.bank||[], borrowed: cached.borrowed||[], lent: cached.lent||[],
+      updatedAt: cached.updatedAt||0, manualLastUpdated: cached.manualLastUpdated||null
+    };
   }
 }catch(e){}
 
@@ -405,6 +602,7 @@ function initFirebase(){
           state.borrowed = data.borrowed || [];
           state.lent = data.lent || [];
           state.updatedAt = data.updatedAt || Date.now();
+          state.manualLastUpdated = data.manualLastUpdated || null;
           saveMoneyLocalCache();
           applyingRemoteMoney = false;
         }
@@ -429,6 +627,13 @@ function mergeEntriesById(remoteArr, localArr){
   return Array.from(map.values());
 }
 
+// This recovery-merge safety net is only meant to protect against a stale/empty
+// local cache on first load of a session (e.g. cleared browser storage). It must
+// NOT run again after that — otherwise deleting two or more entries in the same
+// session could make the (now smaller) local count look "behind" the cloud and
+// wrongly resurrect items you just deleted. So it fires at most once per page load.
+let didRecoveryMergeCheck = false;
+
 let saveInFlight = false;
 let saveQueued = false;
 function queueSave(){
@@ -443,17 +648,16 @@ function queueSave(){
     saveInFlight = true;
     try{
       const remoteSnap = await docRef.get();
-      let payload = { bank: state.bank, borrowed: state.borrowed, lent: state.lent, updatedAt: state.updatedAt };
-      if(remoteSnap.exists){
+      let payload = {
+        bank: state.bank, borrowed: state.borrowed, lent: state.lent,
+        updatedAt: state.updatedAt, manualLastUpdated: state.manualLastUpdated || null
+      };
+      if(remoteSnap.exists && !didRecoveryMergeCheck){
         const remote = remoteSnap.data() || {};
         const remoteCount = (remote.bank||[]).length + (remote.borrowed||[]).length + (remote.lent||[]).length;
         const localCount = (state.bank||[]).length + (state.borrowed||[]).length + (state.lent||[]).length;
-        // Only merge (recovery mode) when this device looks meaningfully
-        // behind the cloud — normal saves skip merging so deletions apply
-        // cleanly. Merging on every save could resurrect an item deleted
-        // moments earlier if the cloud hadn't caught up to that deletion yet.
         if(remoteCount > localCount + 1){
-          console.warn('[queueSave] This device had fewer entries ('+localCount+') than the cloud ('+remoteCount+'). Merging safely.');
+          console.warn('[queueSave] This device had fewer entries ('+localCount+') than the cloud ('+remoteCount+'). Merging safely (one-time recovery check).');
           const mergedBank = mergeEntriesById(remote.bank, state.bank);
           const mergedBorrowed = mergeEntriesById(remote.borrowed, state.borrowed);
           const mergedLent = mergeEntriesById(remote.lent, state.lent);
@@ -463,9 +667,13 @@ function queueSave(){
           state.updatedAt = Date.now();
           saveMoneyLocalCache();
           render();
-          payload = { bank: mergedBank, borrowed: mergedBorrowed, lent: mergedLent, updatedAt: state.updatedAt };
+          payload = {
+            bank: mergedBank, borrowed: mergedBorrowed, lent: mergedLent,
+            updatedAt: state.updatedAt, manualLastUpdated: state.manualLastUpdated || null
+          };
         }
       }
+      didRecoveryMergeCheck = true;
       await docRef.set(payload);
       setStatus('Synced ✓', 'ok');
     }catch(e){
@@ -493,16 +701,282 @@ function daysUntil(dateStr){
   const diff = Math.round((target - today) / 86400000);
   return diff;
 }
+function isUpcoming(e){
+  if(!e.startDate) return false;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const start = new Date(e.startDate);
+  return start > today;
+}
+
+/* ================= TABS ================= */
+function switchTab(name){
+  document.getElementById('dashboardView').style.display = name === 'dashboard' ? 'block' : 'none';
+  document.getElementById('priorityView').style.display = name === 'priority' ? 'block' : 'none';
+  document.getElementById('historyView').style.display = name === 'history' ? 'block' : 'none';
+  document.getElementById('tabDashboardBtn').classList.toggle('active', name === 'dashboard');
+  document.getElementById('tabPriorityBtn').classList.toggle('active', name === 'priority');
+  document.getElementById('tabHistoryBtn').classList.toggle('active', name === 'history');
+  if(name === 'history') renderHistoryView();
+  if(name === 'priority') renderPriorityList();
+}
+
+let historyFilterId = null;
+function viewHistoryFor(id){
+  historyFilterId = id;
+  switchTab('history');
+}
+function clearHistoryFilter(){
+  historyFilterId = null;
+  renderHistoryView();
+}
+
+/* ================= PAYOFF PRIORITY ================= */
+// "Payoff order" lets you choose how the Bank Loans list is sorted: by due date
+// (default), by a priority level you set yourself, or by two well-known debt
+// payoff strategies — avalanche (highest interest first, saves the most money)
+// and snowball (smallest balance first, quick psychological wins).
+let bankSortMode = 'due';
+try{ bankSortMode = localStorage.getItem('money_dashboard_bank_sort') || 'due'; }catch(e){}
+
+function setBankSortMode(mode){
+  bankSortMode = mode;
+  try{ localStorage.setItem('money_dashboard_bank_sort', mode); }catch(e){}
+  renderList('bank');
+}
+
+function bankPayoffComparator(a, b){
+  if(bankSortMode === 'priority'){
+    // Prefer your own manual rank from the Priority List tab (small integers,
+    // 1 = most urgent). Falls back to the High/Medium/Low bucket for entries
+    // you haven't manually ranked yet, so those still sort sensibly relative
+    // to each other without jumping ahead of ranked ones.
+    const bucket = { high: 0, medium: 1, low: 2 };
+    const ra = (typeof a.rank === 'number') ? a.rank : 9000 + bucket[a.priority||'medium'];
+    const rb = (typeof b.rank === 'number') ? b.rank : 9000 + bucket[b.priority||'medium'];
+    if(ra !== rb) return ra - rb;
+    return urgencyScore('bank', a) - urgencyScore('bank', b);
+  }
+  if(bankSortMode === 'avalanche'){
+    const ra = Number(a.interestRate)||0, rb = Number(b.interestRate)||0;
+    if(rb !== ra) return rb - ra;
+    return urgencyScore('bank', a) - urgencyScore('bank', b);
+  }
+  if(bankSortMode === 'snowball'){
+    const pa = pendingOf('bank', a), pb = pendingOf('bank', b);
+    if(pa !== pb) return pa - pb;
+    return urgencyScore('bank', a) - urgencyScore('bank', b);
+  }
+  return urgencyScore('bank', a) - urgencyScore('bank', b); // due date (default)
+}
 
 /* ================= RENDER ================= */
 function render(){
   renderTodayDate();
+  renderHeroBanner();
   renderReminderBanner();
+  const sortEl = document.getElementById('bankSortSelect');
+  if(sortEl) sortEl.value = bankSortMode;
   renderList('bank');
   renderList('borrowed');
   renderList('lent');
   renderSummary();
+  renderDebtFreeNote();
+  renderOverallProgress();
+  renderBankPrepayHint();
+  renderSurplusSuggestion();
+  renderPriorityList();
+  renderHistoryView();
 }
+
+function renderOverallProgress(){
+  const el = document.getElementById('overallProgress');
+  const withTenure = state.bank.filter(e => (e.totalEmis||0) > 0);
+  if(!withTenure.length){ el.innerHTML = ''; return; }
+  const totalEmis = withTenure.reduce((s,e)=> s + (e.totalEmis||0), 0);
+  const paidEmis = withTenure.reduce((s,e)=> s + Math.max(0, (e.totalEmis||0) - (e.months||0)), 0);
+  const pct = totalEmis > 0 ? Math.round((paidEmis/totalEmis)*100) : 0;
+  el.innerHTML = `
+    <div class="label">${pct}% of all EMIs paid off (${paidEmis} of ${totalEmis})</div>
+    <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+  `;
+}
+
+function renderDebtFreeNote(){
+  const el = document.getElementById('debtFreeNote');
+  let maxMonths = 0;
+  state.bank.forEach(e=>{
+    if((e.months||0) > 0 && !isUpcoming(e)) maxMonths = Math.max(maxMonths, e.months);
+  });
+  if(maxMonths <= 0){ el.textContent = ''; return; }
+  const d = new Date();
+  d.setMonth(d.getMonth() + maxMonths);
+  el.textContent = `On current pace, debt-free (loans) by ${d.toLocaleDateString('en-IN',{month:'short', year:'numeric'})}`;
+}
+
+function renderBankPrepayHint(){
+  const el = document.getElementById('bankPrepayHint');
+  const withRate = state.bank.filter(e=> (e.months||0) > 0 && !isUpcoming(e) && Number(e.interestRate) > 0);
+  if(withRate.length < 2){ el.textContent = ''; return; }
+  const top = withRate.slice().sort((a,b)=> b.interestRate - a.interestRate)[0];
+  el.innerHTML = `💡 Prepaying <b>${escapeHtml(top.name)}</b> first usually saves the most — it has the highest rate (${top.interestRate}% p.a.)`;
+}
+
+/* ================= SURPLUS ALLOCATOR ================= */
+// Tells you which single loan to send extra cash to this month, based on
+// whichever payoff strategy is currently selected in the "Payoff order"
+// dropdown — reuses the exact same comparator so the suggestion always
+// matches what the sorted list above is showing.
+let surplusSuggestedId = null;
+let surplusSuggestedAmt = 0;
+
+function renderSurplusSuggestion(){
+  const el = document.getElementById('surplusSuggestion');
+  if(!el) return;
+  const amtInput = document.getElementById('surplusAmount');
+  const amt = Number(amtInput && amtInput.value) || 0;
+  surplusSuggestedId = null;
+  surplusSuggestedAmt = 0;
+
+  if(amt <= 0){ el.innerHTML = ''; return; }
+
+  const active = state.bank.filter(e => (e.months||0) > 0 && !isUpcoming(e));
+  if(!active.length){ el.textContent = 'No active loans to allocate extra payments to.'; return; }
+
+  const sorted = active.slice().sort(bankPayoffComparator);
+  const top = sorted[0];
+  const modeLabel = {
+    due: 'Due Date', priority: 'Your Priority',
+    avalanche: 'Avalanche — highest interest first', snowball: 'Snowball — smallest balance first'
+  }[bankSortMode] || 'Due Date';
+
+  surplusSuggestedId = top.id;
+  surplusSuggestedAmt = amt;
+
+  el.innerHTML = `Based on <b>${modeLabel}</b>: put ${fmt(amt)} toward <b>${escapeHtml(top.name)}</b> this month.` +
+    `<br><button class="prepay" style="margin-top:8px; width:100%;" onclick="applySurplusSuggestion()">Log ${fmt(amt)} to ${escapeHtml(top.name)} now</button>`;
+}
+
+function applySurplusSuggestion(){
+  if(!surplusSuggestedId || surplusSuggestedAmt <= 0) return;
+  const id = surplusSuggestedId, amt = surplusSuggestedAmt;
+  document.getElementById('surplusAmount').value = '';
+  surplusSuggestedId = null;
+  surplusSuggestedAmt = 0;
+  applyPrepayment(id, amt);
+}
+
+/* ================= PRIORITY LIST ================= */
+// A single, manually-ordered list spanning both Bank Loans/EMIs and Money
+// Borrowed (the two debt types you actually owe someone), so you can rank
+// them against each other the way you'd actually tackle them in real life —
+// not by an algorithm's idea of "urgent." This is a flat rank number (1 =
+// most urgent) stored directly on each entry, and it's what "My Priority"
+// in the Bank Loans payoff-order dropdown uses under the hood.
+function priorityCandidates(){
+  const bank = state.bank
+    .filter(e => (e.months||0) > 0 && !isUpcoming(e))
+    .map(e => ({ type: 'bank', id: e.id, name: e.name, pending: pendingOf('bank', e), rank: e.rank }));
+  const borrowed = state.borrowed
+    .filter(e => (Number(e.pending)||0) > 0)
+    .map(e => ({ type: 'borrowed', id: e.id, name: e.name, pending: pendingOf('borrowed', e), rank: e.rank }));
+  return bank.concat(borrowed);
+}
+
+// Assigns a rank to anything that doesn't have one yet, appending it after
+// whatever's already ranked (so newly added debts land at the bottom of your
+// list instead of jumping to the top).
+function ensureRanks(){
+  const items = priorityCandidates();
+  if(!items.length) return false;
+  let maxRank = items.reduce((m,i)=> (typeof i.rank === 'number') ? Math.max(m, i.rank) : m, 0);
+  let changed = false;
+  items
+    .filter(i => typeof i.rank !== 'number')
+    .sort((a,b)=> urgencyScore(a.type === 'bank' ? 'bank' : 'borrowed', state[a.type].find(x=>x.id===a.id)) -
+                  urgencyScore(b.type === 'bank' ? 'bank' : 'borrowed', state[b.type].find(x=>x.id===b.id)))
+    .forEach(i=>{
+      maxRank++;
+      const e = state[i.type].find(x=>x.id===i.id);
+      if(e){ e.rank = maxRank; changed = true; }
+    });
+  return changed;
+}
+
+// Re-numbers a given (already ordered) list to a clean 1..N with no gaps or
+// duplicates, so the number box always shows a valid, meaningful position —
+// important since you can type directly into it.
+function renumberPriority(items){
+  items.forEach((it, idx)=>{
+    const e = state[it.type].find(x=>x.id===it.id);
+    if(e) e.rank = idx + 1;
+  });
+}
+
+function renderPriorityList(){
+  const list = document.getElementById('priorityList');
+  if(!list) return;
+
+  ensureRanks();
+  let items = priorityCandidates().sort((a,b)=> (a.rank||0) - (b.rank||0));
+  renumberPriority(items); // guarantees a clean 1..N before we render inputs
+  items = priorityCandidates().sort((a,b)=> (a.rank||0) - (b.rank||0));
+
+  if(!items.length){
+    list.innerHTML = '<div class="empty-note">Nothing to prioritize yet — add a loan or borrowed amount first.</div>';
+    return;
+  }
+
+  const typeLabel = { bank: 'Loan/EMI', borrowed: 'Borrowed' };
+
+  list.innerHTML = items.map((it, idx)=>{
+    const upDisabled = idx === 0 ? 'disabled' : '';
+    const downDisabled = idx === items.length-1 ? 'disabled' : '';
+    return `
+    <div class="priority-row">
+      <input class="priority-rank-input" type="number" min="1" max="${items.length}" value="${idx+1}"
+        onchange="setRankPosition('${it.type}','${it.id}', this.value)">
+      <div class="priority-info">
+        <div class="priority-name"><span class="priority-type">${typeLabel[it.type]}</span>${escapeHtml(it.name)}</div>
+        <div class="priority-meta">${fmt(it.pending)} pending</div>
+      </div>
+      <div class="priority-arrows">
+        <button ${upDisabled} onclick="moveRank('${it.type}','${it.id}',-1)">▲</button>
+        <button ${downDisabled} onclick="moveRank('${it.type}','${it.id}',1)">▼</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Moves an entry to an exact 1-based position you type in, shifting everything
+// else out of the way (rather than just swapping two neighbors) — so typing
+// "1" jumps straight to the top from anywhere in the list.
+function setRankPosition(type, id, newPos){
+  const items = priorityCandidates().sort((a,b)=> (a.rank||0) - (b.rank||0));
+  const idx = items.findIndex(i => i.type === type && i.id === id);
+  if(idx < 0) return;
+
+  const clamped = Math.max(1, Math.min(items.length, Math.round(Number(newPos)) || 1));
+  const [item] = items.splice(idx, 1);
+  items.splice(clamped - 1, 0, item);
+
+  renumberPriority(items);
+  renderPriorityList();
+  queueSave();
+}
+
+function moveRank(type, id, direction){
+  const items = priorityCandidates().sort((a,b)=> (a.rank||0) - (b.rank||0));
+  const idx = items.findIndex(i => i.type === type && i.id === id);
+  if(idx < 0) return;
+  setRankPosition(type, id, idx + 1 + direction);
+}
+
+// "Last updated" defaults to the automatic sync timestamp, but since this
+// dashboard is filled in manually rather than pulling from a bank feed, you
+// can click it to set your own date instead — e.g. "the date I last actually
+// went through and updated all my numbers," which is a different (and often
+// more useful) fact than "the date the browser last wrote to the cloud."
+let editingLastUpdated = false;
 
 function renderTodayDate(){
   const today = new Date();
@@ -510,49 +984,115 @@ function renderTodayDate(){
     day: 'numeric', month: 'short', year: 'numeric'
   });
 
-  let nearest = null;
+  if(editingLastUpdated) return; // don't clobber the input while it's being edited
+
+  const luEl = document.getElementById('lastUpdated');
+  if(state.manualLastUpdated){
+    const d = new Date(state.manualLastUpdated);
+    luEl.innerHTML = 'Last updated: ' +
+      d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) +
+      '<span class="last-updated-reset" onclick="resetManualLastUpdated(event)">reset</span>';
+  } else if(state.updatedAt){
+    const d = new Date(state.updatedAt);
+    luEl.textContent = 'Last updated: ' + d.toLocaleDateString('en-IN',{day:'numeric',month:'short'}) +
+      ', ' + d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  } else {
+    luEl.textContent = 'Last updated: —';
+  }
+}
+
+function startEditLastUpdated(){
+  if(editingLastUpdated) return;
+  editingLastUpdated = true;
+  const luEl = document.getElementById('lastUpdated');
+  const current = state.manualLastUpdated || new Date().toISOString().slice(0,10);
+  luEl.innerHTML = `<input type="date" class="last-updated-edit" id="lastUpdatedInput" value="${current}">`;
+  const input = document.getElementById('lastUpdatedInput');
+  if(input){
+    input.onblur = () => saveManualLastUpdated(input.value);
+    input.onkeydown = (ev) => { if(ev.key === 'Enter') input.blur(); };
+    input.focus();
+  }
+}
+
+function saveManualLastUpdated(value){
+  editingLastUpdated = false;
+  if(value){
+    state.manualLastUpdated = value;
+    queueSave();
+  }
+  renderTodayDate();
+}
+
+function resetManualLastUpdated(ev){
+  if(ev) ev.stopPropagation();
+  state.manualLastUpdated = null;
+  queueSave();
+  renderTodayDate();
+}
+
+function renderHeroBanner(){
+  const el = document.getElementById('heroBanner');
+  const candidates = [];
+
   state.bank.forEach(e=>{
-    if((e.months||0) <= 0 || !e.dueDay) return;
-    const nd = nextDueInfo(e.dueDay);
-    if(nd && (!nearest || nd.diff < nearest.diff)) nearest = { name: e.name, diff: nd.diff };
+    if((e.months||0) <= 0) return;
+    if(isUpcoming(e)){
+      const d = daysUntil(e.startDate);
+      if(d === null) return;
+      const dateLabel = new Date(e.startDate).toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+      candidates.push({ diff: d, urgency: 'upcoming', text: `Upcoming: ${e.name} starts ${dateLabel} (in ${d}d)` });
+    } else if(e.dueDay){
+      const nd = nextDueInfo(e.dueDay);
+      if(!nd) return;
+      const urgency = nd.diff <= 0 ? 'overdue' : (nd.diff <= 3 ? 'soon' : 'calm');
+      const text = nd.diff <= 0 ? `${e.name} EMI is due today` : `Next EMI: ${e.name} in ${nd.diff}d`;
+      candidates.push({ diff: nd.diff, urgency, text });
+    }
   });
 
-  const note = document.getElementById('nextEmiNote');
-  if(!nearest){
-    note.textContent = '';
-    note.className = 'next-emi-note';
+  if(!candidates.length){
+    el.textContent = 'All EMIs on track — nothing due soon.';
+    el.className = 'hero-banner calm';
     return;
   }
-  let cls = 'next-emi-note calm', text = `Next EMI: ${nearest.name} in ${nearest.diff}d`;
-  if(nearest.diff <= 0){ cls = 'next-emi-note overdue'; text = `Next EMI: ${nearest.name} — due today`; }
-  else if(nearest.diff <= 3){ cls = 'next-emi-note'; text = `Next EMI: ${nearest.name} in ${nearest.diff}d`; }
-  note.textContent = text;
-  note.className = cls;
+  candidates.sort((a,b)=> a.diff - b.diff);
+  const top = candidates[0];
+  el.textContent = top.text;
+  el.className = 'hero-banner ' + top.urgency;
 }
 
 function renderReminderBanner(){
   const banner = document.getElementById('reminderBanner');
   const dueSoon = [];
+  const upcoming = [];
   state.bank.forEach(e=>{
-    if((e.months||0) <= 0 || !e.dueDay) return;
+    if((e.months||0) <= 0) return;
+    if(isUpcoming(e)){
+      const d = daysUntil(e.startDate);
+      if(d !== null && d <= 14) upcoming.push({ name: e.name, diff: d });
+      return;
+    }
+    if(!e.dueDay) return;
     const nd = nextDueInfo(e.dueDay);
     if(nd && nd.diff <= 7) dueSoon.push({ name: e.name, diff: nd.diff });
   });
   const overdueFriends = [];
   state.borrowed.concat(state.lent).forEach(e=>{
-    const p = pendingOf('x', e);
+    const p = Number(e.pending)||0;
     if(p > 0 && e.returnDate){
       const d = daysUntil(e.returnDate);
       if(d !== null && d < 0) overdueFriends.push(e.name);
     }
   });
 
-  if(!dueSoon.length && !overdueFriends.length){
+  if(!dueSoon.length && !overdueFriends.length && !upcoming.length){
     banner.style.display = 'none';
     return;
   }
   let parts = [];
   if(dueSoon.length) parts.push(`${dueSoon.length} EMI${dueSoon.length>1?'s':''} due within a week`);
+  if(upcoming.length) parts.push(`${upcoming.length} loan${upcoming.length>1?'s':''} starting soon`);
   if(overdueFriends.length) parts.push(`${overdueFriends.length} overdue return${overdueFriends.length>1?'s':''}`);
   banner.innerHTML = `<span class="dot"></span> ${parts.join(' &nbsp;•&nbsp; ')}`;
   banner.style.display = 'flex';
@@ -577,7 +1117,7 @@ function renderSummary(){
   netEl.textContent = (net<0? '-':'') + fmt(Math.abs(net));
   netEl.style.color = net < 0 ? 'var(--danger)' : (net>0 ? 'var(--good)' : 'var(--ink)');
 
-  const monthlyOutgo = state.bank.reduce((s,e)=> s + ((e.months||0)>0 ? (Number(e.emi)||0) : 0), 0);
+  const monthlyOutgo = state.bank.reduce((s,e)=> s + (((e.months||0)>0 && !isUpcoming(e)) ? (Number(e.emi)||0) : 0), 0);
   document.getElementById('monthlyOutgo').textContent = 'Monthly EMI outgo: ' + fmt(monthlyOutgo);
 }
 
@@ -585,6 +1125,10 @@ function urgencyScore(type, e){
   const pending = pendingOf(type, e);
   if(pending <= 0) return 999999; // cleared, sinks to bottom (moved to Cleared section anyway)
   if(type === 'bank'){
+    if(isUpcoming(e)){
+      const d = daysUntil(e.startDate);
+      return d !== null ? d : 500;
+    }
     if(e.dueDay){
       const nd = nextDueInfo(e.dueDay);
       if(nd) return nd.diff;
@@ -606,7 +1150,7 @@ function renderList(type){
   const active = all.filter(e => pendingOf(type, e) > 0);
   const cleared = all.filter(e => pendingOf(type, e) <= 0);
 
-  active.sort((a,b) => urgencyScore(type,a) - urgencyScore(type,b));
+  active.sort((a,b) => type === 'bank' ? bankPayoffComparator(a,b) : urgencyScore(type,a) - urgencyScore(type,b));
 
   if(!active.length && !cleared.length){
     container.innerHTML = '<div class="empty-note">Nothing added yet.</div>';
@@ -669,8 +1213,15 @@ function entryCardHTML(type, e){
   let progressHTML = '';
 
   if(type === 'bank'){
-    meta = `EMI: ${fmt(e.emi)} / month &nbsp;•&nbsp; ${e.months || 0} EMI(s) remaining`;
-    if(e.dueDay){
+    meta = `EMI: ${fmt(e.emi)} / month`;
+    if(e.interestRate) meta += ` &nbsp;•&nbsp; ${e.interestRate}% p.a.`;
+    meta += ` &nbsp;•&nbsp; ${e.months || 0} EMI(s) remaining`;
+
+    if(isUpcoming(e)){
+      const d = daysUntil(e.startDate);
+      const dateLabel = new Date(e.startDate).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+      meta += ` &nbsp;•&nbsp; <span class="due-ok">Upcoming — starts ${dateLabel} (in ${d}d)</span>`;
+    } else if(e.dueDay){
       const nd = nextDueInfo(e.dueDay);
       if(nd){
         let cls = 'due-ok', text = `Due ${nd.date.toLocaleDateString('en-IN',{day:'numeric',month:'short'})}`;
@@ -685,8 +1236,14 @@ function entryCardHTML(type, e){
       meta += ` &nbsp;•&nbsp; ${paidCount}/${e.totalEmis} paid`;
       progressHTML = `<div class="progress-track"><div class="progress-fill owe" style="width:${pct}%"></div></div>`;
     }
-    const pl = payoffLine(e.months);
-    if(pl) meta += `<div class="payoff-line">${pl}</div>`;
+    if(e.totalPrepaid){
+      meta += ` &nbsp;•&nbsp; <span style="color:var(--teal); font-weight:700;">Prepaid ${fmt(e.totalPrepaid)}</span>`;
+      if(e.totalInterestSaved > 0) meta += ` (~${fmt(Math.round(e.totalInterestSaved))} interest saved)`;
+    }
+    if(!isUpcoming(e)){
+      const pl = payoffLine(e.months);
+      if(pl) meta += `<div class="payoff-line">${pl}</div>`;
+    }
   } else {
     const d = daysUntil(e.returnDate);
     let dText = '';
@@ -707,28 +1264,49 @@ function entryCardHTML(type, e){
     meta += (meta ? '<br>' : '') + escapeHtml(e.notes);
   }
 
-  let history = '';
+  let historyLine = '';
   if(e.history && e.history.length){
-    history = '<div class="history-list">' + e.history.map(h =>
-      `<div class="history-item"><span>${h.date}</span><span>-${fmt(h.amount)}</span></div>`
-    ).join('') + '</div>';
+    historyLine = `<div class="history-link" onclick="viewHistoryFor('${e.id}')">${e.history.length} payment${e.history.length>1?'s':''} logged — view log ›</div>`;
   }
 
   const payLabel = type === 'bank' ? 'Mark EMI Paid' : 'Log Payment';
+  const payButton = (type === 'bank' && isUpcoming(e))
+    ? `<button disabled style="opacity:0.5; cursor:not-allowed;">Not started yet</button>`
+    : `<button class="pay" onclick="logPayment('${type}','${e.id}')">${payLabel}</button>`;
+  const prepayButton = (type === 'bank' && !isUpcoming(e) && (e.months||0) > 0)
+    ? `<button class="prepay" onclick="logPrepayment('${e.id}')">Lump Sum</button>`
+    : '';
+  const whatIfButton = (type === 'bank' && !isUpcoming(e) && (e.months||0) > 0)
+    ? `<button onclick="openWhatIf('${e.id}')">What If?</button>`
+    : '';
+
+  // A manual rank from the Priority List tab (see moveRank/renderPriorityList)
+  // takes precedence over the coarse High/Medium/Low bucket, since it's the
+  // more specific real-life ordering you set yourself.
+  let priorityBadge = '';
+  if((type === 'bank' || type === 'borrowed') && typeof e.rank === 'number'){
+    priorityBadge = `<span class="priority-badge ranked">Priority #${e.rank}</span>`;
+  } else if(type === 'bank' && e.priority === 'high'){
+    priorityBadge = '<span class="priority-badge high">High priority</span>';
+  } else if(type === 'bank' && e.priority === 'low'){
+    priorityBadge = '<span class="priority-badge low">Low priority</span>';
+  }
 
   return `
   <div class="entry-card">
     <div class="entry-row">
       <div>
-        <div class="entry-name">${escapeHtml(e.name)}</div>
+        <div class="entry-name">${escapeHtml(e.name)}${priorityBadge}</div>
         <div class="entry-meta">${meta}</div>
       </div>
       <div class="entry-pending ${pendingClass}">${fmt(pending)}</div>
     </div>
     ${progressHTML}
-    ${history}
+    ${historyLine}
     <div class="entry-actions">
-      <button class="pay" onclick="logPayment('${type}','${e.id}')">${payLabel}</button>
+      ${payButton}
+      ${prepayButton}
+      ${whatIfButton}
       <button onclick="editEntry('${type}','${e.id}')">Edit</button>
       <button class="del" onclick="deleteEntry('${type}','${e.id}')">Delete</button>
     </div>
@@ -740,6 +1318,53 @@ function escapeHtml(s){
   const d = document.createElement('div');
   d.textContent = s;
   return d.innerHTML;
+}
+
+/* ================= HISTORY TAB ================= */
+function renderHistoryView(){
+  const searchEl = document.getElementById('historySearch');
+  const q = (searchEl && searchEl.value || '').toLowerCase();
+  const typeLabel = { bank: 'Loan/EMI', borrowed: 'Borrowed', lent: 'Lent' };
+
+  let rows = [];
+  ['bank','borrowed','lent'].forEach(type=>{
+    state[type].forEach(e=>{
+      (e.history||[]).forEach(h=>{
+        const sub = type === 'bank' ? (h.type === 'prepay' ? 'Lump Sum' : 'EMI Payment') : typeLabel[type];
+        rows.push({ date: h.date, amount: h.amount, name: e.name, type, id: e.id, sub });
+      });
+    });
+  });
+
+  if(historyFilterId){
+    rows = rows.filter(r=> r.id === historyFilterId);
+  } else if(q){
+    rows = rows.filter(r=> r.name.toLowerCase().includes(q));
+  }
+  rows.sort((a,b)=> (b.date||'').localeCompare(a.date||''));
+
+  const list = document.getElementById('historyList');
+  let filterNote = '';
+  if(historyFilterId){
+    filterNote = `<div class="history-filter-note">Showing log for this entry only. <span onclick="clearHistoryFilter()">Show all ›</span></div>`;
+  }
+
+  if(!rows.length){
+    list.innerHTML = filterNote + '<div class="empty-note">No payments logged yet.</div>';
+    return;
+  }
+
+  list.innerHTML = filterNote + rows.map(r=>{
+    const sign = r.type === 'lent' ? '+' : '-';
+    const color = r.type === 'lent' ? 'var(--good)' : 'var(--danger)';
+    return `<div class="history-row">
+      <div>
+        <div class="history-name">${escapeHtml(r.name)}</div>
+        <div class="history-sub">${r.sub} • ${r.date}</div>
+      </div>
+      <div style="color:${color}; font-weight:800;">${sign}${fmt(r.amount)}</div>
+    </div>`;
+  }).join('');
 }
 
 /* ================= MODAL ================= */
@@ -762,19 +1387,30 @@ function openModal(type, id){
 
   if(id){
     const e = state[type].find(x=>x.id===id);
+    const paidCount = e.totalEmis ? Math.max(0, (e.totalEmis - (e.months||0))) : 0;
     document.getElementById('fName').value = e.name || '';
     document.getElementById('fPending').value = (type==='bank') ? '' : (e.totalAmount || e.pending || '');
     document.getElementById('fEmi').value = e.emi || '';
-    document.getElementById('fMonths').value = e.months || '';
+    document.getElementById('fTotalEmis').value = e.totalEmis || '';
+    // Reconstructed from EMIs-paid × EMI amount (an approximation, since only the
+    // resulting EMI count is stored, not the original amount you typed in).
+    document.getElementById('fPaidEmis').value = paidCount ? (paidCount * (Number(e.emi)||0)) : '';
     document.getElementById('fDueDay').value = e.dueDay || '';
+    document.getElementById('fInterestRate').value = e.interestRate || '';
+    document.getElementById('fStartDate').value = e.startDate || '';
+    document.getElementById('fPriority').value = e.priority || 'medium';
     document.getElementById('fReturnDate').value = e.returnDate || '';
     document.getElementById('fNotes').value = e.notes || '';
   } else {
     document.getElementById('fName').value = '';
     document.getElementById('fPending').value = '';
     document.getElementById('fEmi').value = '';
-    document.getElementById('fMonths').value = '';
+    document.getElementById('fTotalEmis').value = '';
+    document.getElementById('fPaidEmis').value = '';
     document.getElementById('fDueDay').value = '';
+    document.getElementById('fInterestRate').value = '';
+    document.getElementById('fStartDate').value = '';
+    document.getElementById('fPriority').value = 'medium';
     document.getElementById('fReturnDate').value = '';
     document.getElementById('fNotes').value = '';
   }
@@ -783,11 +1419,38 @@ function openModal(type, id){
   document.getElementById('overlay').classList.add('show');
 }
 
+// "Already Paid" is entered as a rupee amount (matches how people naturally
+// think about it — e.g. "I've paid 1,98,000 so far"), then converted here into
+// a whole number of EMIs. This avoids the old bug where a rupee amount typed
+// into an "EMI count" field silently produced a garbage "0 remaining" result.
+function paidEmisFromAmount(paidAmount, emi, totalEmis){
+  if(emi <= 0) return 0;
+  const count = Math.round(paidAmount / emi);
+  return Math.max(0, Math.min(totalEmis, count));
+}
+
 function updateCalcPreview(){
   const emi = Number(document.getElementById('fEmi').value) || 0;
-  const months = Number(document.getElementById('fMonths').value) || 0;
-  document.getElementById('calcPreview').textContent =
-    `Total pending will auto-calculate: ${fmt(emi*months)}  (${fmt(emi)} × ${months})`;
+  const total = Number(document.getElementById('fTotalEmis').value) || 0;
+  const paidAmount = Number(document.getElementById('fPaidEmis').value) || 0;
+  const previewEl = document.getElementById('calcPreview');
+
+  if(paidAmount > 0 && emi <= 0){
+    previewEl.textContent = 'Enter the EMI amount first so "Already Paid" can be converted into EMIs.';
+    return;
+  }
+
+  const paidCount = paidEmisFromAmount(paidAmount, emi, total);
+  const remaining = Math.max(0, total - paidCount);
+  let note = '';
+  if(emi > 0 && total > 0 && Math.round(paidAmount / emi) > total){
+    note = ` (this covers more than the full tenure — treated as fully paid)`;
+  }
+
+  previewEl.innerHTML =
+    `Already paid: ${fmt(paidAmount)} ≈ ${paidCount} EMI${paidCount===1?'':'s'}${note} &nbsp;•&nbsp; ` +
+    `Remaining pending: ${fmt(emi*remaining)} (${remaining} of ${total} EMIs left) &nbsp;•&nbsp; ` +
+    `Total loan value: ${fmt(emi*total)}`;
 }
 
 function closeModal(){
@@ -805,19 +1468,31 @@ function saveEntry(){
   if(!name){ alert('Please enter a name.'); return; }
   const amountVal = Number(document.getElementById('fPending').value) || 0;
   const emi = Number(document.getElementById('fEmi').value) || 0;
-  const months = Number(document.getElementById('fMonths').value) || 0;
-  const dueDay = Number(document.getElementById('fDueDay').value) || 0;
+  let dueDay = Number(document.getElementById('fDueDay').value) || 0;
+  if(dueDay < 0) dueDay = 0;
+  if(dueDay > 31) dueDay = 31;
   const returnDate = document.getElementById('fReturnDate').value || '';
   const notes = document.getElementById('fNotes').value.trim();
 
   if(modalType === 'bank'){
+    const totalEmis = Math.max(0, Number(document.getElementById('fTotalEmis').value) || 0);
+    const paidAmount = Math.max(0, Number(document.getElementById('fPaidEmis').value) || 0);
+    const paidEmis = paidEmisFromAmount(paidAmount, emi, totalEmis);
+
+    const months = Math.max(0, totalEmis - paidEmis);
+    const interestRate = Number(document.getElementById('fInterestRate').value) || 0;
+    const startDate = document.getElementById('fStartDate').value || '';
+    const priority = document.getElementById('fPriority').value || 'medium';
+
     if(editingId){
       const e = state.bank.find(x=>x.id===editingId);
-      e.name = name; e.emi = emi; e.months = months; e.dueDay = dueDay; e.notes = notes;
-      if(months > (e.totalEmis||0)) e.totalEmis = months;
+      e.name = name; e.emi = emi; e.months = months; e.totalEmis = totalEmis;
+      e.dueDay = dueDay; e.interestRate = interestRate; e.startDate = startDate;
+      e.priority = priority; e.notes = notes;
     } else {
       state.bank.push({
-        id: uid(), name, emi, months, dueDay, totalEmis: months, notes, history: []
+        id: uid(), name, emi, months, totalEmis, dueDay, interestRate, startDate,
+        priority, notes, history: []
       });
     }
   } else {
@@ -863,6 +1538,7 @@ function logPayment(type, id){
 
   if(type === 'bank'){
     if((e.months||0) <= 0){ alert('No EMIs remaining for this loan.'); return; }
+    if(isUpcoming(e)){ alert('This loan has not started yet.'); return; }
     const defaultAmt = e.emi || 0;
     const amtStr = prompt(`Mark an EMI as paid for "${e.name}".\nEMI amount: ${fmt(defaultAmt)}\nConfirm amount paid:`, defaultAmt);
     if(amtStr === null) return;
@@ -894,6 +1570,306 @@ function logPayment(type, id){
   queueSave();
 }
 
+// Logs a lump-sum / prepayment against a bank loan, on top of the regular EMI
+// schedule. If an interest rate is set, this reverse-engineers the outstanding
+// principal from EMI/rate/remaining-tenure (standard amortization formula),
+// then estimates how many EMIs the lump sum knocks off and roughly how much
+// interest that saves. Without a rate, it falls back to a simple
+// amount / EMI tenure reduction with no interest estimate.
+function logPrepayment(id){
+  const e = state.bank.find(x=>x.id===id);
+  if(!e) return;
+  if((e.months||0) <= 0){ alert('This loan is already fully paid.'); return; }
+  if(isUpcoming(e)){ alert('This loan has not started yet.'); return; }
+
+  const amtStr = prompt(`Log a lump sum / prepayment for "${e.name}".\nThis is on top of your regular EMI.\nEnter amount paid:`);
+  if(amtStr === null) return;
+  const amt = Number(amtStr);
+  if(!amt || amt <= 0){ alert('Enter a valid positive amount.'); return; }
+
+  applyPrepayment(id, amt);
+}
+
+// Actually commits a lump-sum payment to a loan (used by both the "Lump Sum"
+// button's prompt above and by the What-If simulator's "Log this now" action).
+function applyPrepayment(id, amt){
+  const e = state.bank.find(x=>x.id===id);
+  if(!e) return;
+
+  const emi = Number(e.emi) || 0;
+  const n = Number(e.months) || 0;
+  let emisReduced = 0;
+  let interestSaved = 0;
+
+  if(emi > 0){
+    const rate = Number(e.interestRate) || 0;
+    if(rate > 0){
+      const r = rate / 12 / 100;
+      // Outstanding principal implied by the current EMI, rate and remaining tenure.
+      const P = emi * (1 - Math.pow(1+r, -n)) / r;
+      const Pnew = Math.max(0, P - amt);
+      if(Pnew <= 0){
+        emisReduced = n;
+        interestSaved = Math.max(0, emi*n - P);
+      } else {
+        const denom = emi - Pnew*r;
+        if(denom > 0){
+          const nNew = Math.log(emi/denom) / Math.log(1+r);
+          emisReduced = Math.max(0, Math.min(n, Math.round(n - nNew)));
+          interestSaved = Math.max(0, emi*(n-nNew) - amt);
+        } else {
+          emisReduced = Math.min(n, Math.floor(amt/emi));
+        }
+      }
+    } else {
+      emisReduced = Math.min(n, Math.floor(amt/emi));
+    }
+  }
+
+  e.months = Math.max(0, n - emisReduced);
+  e.totalPrepaid = (Number(e.totalPrepaid)||0) + amt;
+  e.totalInterestSaved = (Number(e.totalInterestSaved)||0) + interestSaved;
+  e.history = e.history || [];
+  e.history.unshift({ date: new Date().toISOString().slice(0,10), amount: amt, type: 'prepay' });
+
+  lastAction = { type: 'bank', id, kind: 'prepay', monthsDelta: emisReduced, prepaidDelta: amt, interestSavedDelta: interestSaved };
+
+  let msg = `Lump sum of ${fmt(amt)} logged for ${e.name}.`;
+  if(emisReduced > 0) msg += ` ~${emisReduced} EMI${emisReduced>1?'s':''} knocked off.`;
+  if(interestSaved > 0) msg += ` Est. ${fmt(Math.round(interestSaved))} interest saved.`;
+  showUndoToast(msg);
+
+  render();
+  queueSave();
+}
+
+/* ================= WHAT-IF SIMULATOR ================= */
+// Pure simulation — nothing here touches `state` or triggers a save. It reuses
+// the same amortization math as applyPrepayment(), but for a one-time lump sum
+// AND/OR a permanently higher monthly EMI, so you can compare "what if I paid
+// extra every month" against "what if I threw a bonus at it once."
+let whatIfLoanId = null;
+
+function openWhatIf(id){
+  const e = state.bank.find(x=>x.id===id);
+  if(!e) return;
+  whatIfLoanId = id;
+  document.getElementById('whatIfTitle').textContent = `What If? — ${e.name}`;
+  document.getElementById('wiLump').value = '';
+  document.getElementById('wiExtra').value = '';
+  document.getElementById('whatIfResult').textContent = 'Enter an amount below to see the impact on this loan.';
+  document.getElementById('whatIfOverlay').classList.add('show');
+}
+
+function closeWhatIf(){
+  document.getElementById('whatIfOverlay').classList.remove('show');
+  whatIfLoanId = null;
+}
+
+function whatIfImpact(e, lump, extraMonthly){
+  const emi = Number(e.emi) || 0;
+  const n = Number(e.months) || 0;
+  const rate = Number(e.interestRate) || 0;
+  const emiNew = emi + (Number(extraMonthly) || 0);
+  const lumpAmt = Number(lump) || 0;
+  if(emi <= 0 || n <= 0 || emiNew <= 0) return null;
+
+  if(rate <= 0){
+    // No interest rate on file: simple linear estimate, no interest-saved figure.
+    const remainingOwed = Math.max(0, emi*n - lumpAmt);
+    const nNew = Math.min(n, remainingOwed / emiNew);
+    return { nNew, monthsSaved: Math.max(0, n - nNew), interestSaved: 0, hasRate: false, valid: true };
+  }
+
+  const r = rate / 12 / 100;
+  const P = emi * (1 - Math.pow(1+r, -n)) / r;
+  const Pnew = Math.max(0, P - lumpAmt);
+  if(Pnew <= 0){
+    return { nNew: 0, monthsSaved: n, interestSaved: Math.max(0, emi*n - P), hasRate: true, valid: true };
+  }
+  const denom = emiNew - Pnew*r;
+  if(denom <= 0){
+    return { valid: false }; // EMI too small to even cover interest on what's left
+  }
+  const nNew = Math.log(emiNew/denom) / Math.log(1+r);
+  const interestSaved = Math.max(0, (emi*n) - (emiNew*nNew + lumpAmt));
+  return { nNew, monthsSaved: Math.max(0, n - nNew), interestSaved, hasRate: true, valid: true };
+}
+
+function computeWhatIf(){
+  const e = state.bank.find(x=>x.id===whatIfLoanId);
+  const resEl = document.getElementById('whatIfResult');
+  if(!e) return;
+  const lump = Number(document.getElementById('wiLump').value) || 0;
+  const extra = Number(document.getElementById('wiExtra').value) || 0;
+
+  if(lump <= 0 && extra <= 0){
+    resEl.textContent = 'Enter an amount below to see the impact on this loan.';
+    return;
+  }
+
+  const impact = whatIfImpact(e, lump, extra);
+  if(!impact || !impact.valid){
+    resEl.textContent = 'That combination pays off too little to make progress — try a larger amount.';
+    return;
+  }
+
+  const monthsSavedRounded = Math.round(impact.monthsSaved);
+  const d = new Date();
+  d.setMonth(d.getMonth() + Math.ceil(impact.nNew));
+  const payoffLabel = impact.nNew <= 0 ? 'immediately' : `~${d.toLocaleDateString('en-IN',{month:'short', year:'numeric'})}`;
+
+  let msg = `New payoff: ${payoffLabel}`;
+  if(monthsSavedRounded > 0) msg += ` — ${monthsSavedRounded} EMI${monthsSavedRounded!==1?'s':''} sooner`;
+  msg += '.';
+  if(impact.hasRate && impact.interestSaved > 0){
+    msg += ` Est. interest saved: ${fmt(Math.round(impact.interestSaved))}.`;
+  } else if(!impact.hasRate){
+    msg += ' Add an interest rate on this loan (Edit) to also see estimated interest saved.';
+  }
+  resEl.textContent = msg;
+}
+
+function commitWhatIfLumpSum(){
+  const lump = Number(document.getElementById('wiLump').value) || 0;
+  if(lump <= 0){
+    alert('Enter a one-time lump sum amount above to log it. The "extra per month" field is for planning only — it isn\'t logged automatically since it repeats every month.');
+    return;
+  }
+  const id = whatIfLoanId;
+  closeWhatIf();
+  applyPrepayment(id, lump);
+}
+
+/* ================= PAYOFF CALENDAR ================= */
+// Simulates paying off every active loan month by month, given a fixed extra
+// monthly budget and a strategy (avalanche or snowball). Crucially, once a
+// loan is fully paid off inside the simulation, its EMI is "freed" and rolled
+// into the pool for the next month — that redirection is the entire premise
+// of the avalanche/snowball methods, not just throwing extra cash at debt.
+function simulatePayoff(extraMonthly, mode){
+  let loans = state.bank.filter(e => (e.months||0) > 0 && !isUpcoming(e)).map(e=>{
+    const emi = Number(e.emi) || 0;
+    const n = Number(e.months) || 0;
+    const rate = Number(e.interestRate) || 0;
+    let balance;
+    if(rate > 0 && emi > 0 && n > 0){
+      const r = rate / 12 / 100;
+      balance = emi * (1 - Math.pow(1+r, -n)) / r; // outstanding principal
+    } else {
+      balance = emi * n; // no rate on file: flat balance, no interest modeled
+    }
+    return { id: e.id, name: e.name, emi, rate, balance };
+  });
+
+  if(!loans.length) return { totalMonths: 0, totalInterest: 0 };
+
+  let month = 0;
+  let totalInterest = 0;
+  const MAX_MONTHS = 1200; // 100-year safety cap against runaway loops
+
+  while(loans.some(l => l.balance > 0.5) && month < MAX_MONTHS){
+    month++;
+    const freedEmi = loans.filter(l => l.balance <= 0.5).reduce((s,l)=> s + l.emi, 0);
+
+    loans.forEach(l=>{
+      if(l.balance <= 0.5) return;
+      const r = l.rate > 0 ? l.rate/12/100 : 0;
+      const interest = l.balance * r;
+      totalInterest += interest;
+      l.balance = l.balance + interest - l.emi;
+      if(l.balance < 0) l.balance = 0;
+    });
+
+    let pool = extraMonthly + freedEmi;
+    if(pool > 0){
+      const open = loans.filter(l => l.balance > 0.5)
+        .sort((a,b)=> mode === 'avalanche' ? (b.rate - a.rate) : (a.balance - b.balance));
+      for(const l of open){
+        if(pool <= 0) break;
+        const pay = Math.min(pool, l.balance);
+        l.balance -= pay;
+        pool -= pay;
+      }
+    }
+  }
+
+  return { totalMonths: month, totalInterest };
+}
+
+// "Current pace" baseline: each loan finishes on its own independent schedule,
+// with no redirection of freed-up EMIs — i.e. what happens if you don't
+// actively manage payoff order at all.
+function baselineMonths(){
+  const active = state.bank.filter(e => (e.months||0) > 0 && !isUpcoming(e));
+  return active.reduce((m,e)=> Math.max(m, e.months||0), 0);
+}
+
+function baselineInterest(){
+  const active = state.bank.filter(e => (e.months||0) > 0 && !isUpcoming(e));
+  return active.reduce((s,e)=>{
+    const emi = Number(e.emi)||0, n = Number(e.months)||0, rate = Number(e.interestRate)||0;
+    if(rate <= 0 || emi <= 0 || n <= 0) return s;
+    const r = rate/12/100;
+    const P = emi * (1 - Math.pow(1+r, -n)) / r;
+    return s + Math.max(0, emi*n - P);
+  }, 0);
+}
+
+function openPayoffCalendar(){
+  document.getElementById('calendarExtra').value = '';
+  document.getElementById('calendarOverlay').classList.add('show');
+  computePayoffCalendar();
+}
+
+function closePayoffCalendar(){
+  document.getElementById('calendarOverlay').classList.remove('show');
+}
+
+function computePayoffCalendar(){
+  const el = document.getElementById('calendarResult');
+  const extra = Number(document.getElementById('calendarExtra').value) || 0;
+  const active = state.bank.filter(e => (e.months||0) > 0 && !isUpcoming(e));
+
+  if(!active.length){
+    el.textContent = 'No active loans to project.';
+    return;
+  }
+
+  const baseMonths = baselineMonths();
+  const baseInterest = baselineInterest();
+  const avalanche = simulatePayoff(extra, 'avalanche');
+  const snowball = simulatePayoff(extra, 'snowball');
+  const hasAnyRate = active.some(e => Number(e.interestRate) > 0);
+
+  function dateFromMonths(m){
+    const d = new Date();
+    d.setMonth(d.getMonth() + Math.ceil(m));
+    return d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+  }
+
+  const avalancheSaved = Math.max(0, baseMonths - avalanche.totalMonths);
+  const snowballSaved = Math.max(0, baseMonths - snowball.totalMonths);
+
+  let html = `<div style="margin-bottom:10px;"><b>Current pace</b> (no redirection): debt-free by ${dateFromMonths(baseMonths)}</div>`;
+
+  html += `<div style="margin-bottom:10px;"><b>Avalanche</b> (redirect freed EMIs${extra>0?` + ${fmt(extra)}/mo`:''}, highest interest first): debt-free by ${dateFromMonths(avalanche.totalMonths)}`;
+  if(avalancheSaved > 0) html += ` — ${avalancheSaved} month${avalancheSaved!==1?'s':''} sooner`;
+  if(hasAnyRate) html += `, ~${fmt(Math.round(Math.max(0, baseInterest - avalanche.totalInterest)))} interest saved`;
+  html += `</div>`;
+
+  html += `<div><b>Snowball</b> (redirect freed EMIs${extra>0?` + ${fmt(extra)}/mo`:''}, smallest balance first): debt-free by ${dateFromMonths(snowball.totalMonths)}`;
+  if(snowballSaved > 0) html += ` — ${snowballSaved} month${snowballSaved!==1?'s':''} sooner`;
+  if(hasAnyRate) html += `, ~${fmt(Math.round(Math.max(0, baseInterest - snowball.totalInterest)))} interest saved`;
+  html += `</div>`;
+
+  if(!hasAnyRate){
+    html += `<div style="margin-top:10px; font-size:11.5px; color:var(--muted);">Add interest rates on your loans (Edit) to also see estimated interest saved.</div>`;
+  }
+
+  el.innerHTML = html;
+}
+
 function undoLastPayment(){
   if(!lastAction) return;
   const e = state[lastAction.type].find(x=>x.id===lastAction.id);
@@ -902,6 +1878,10 @@ function undoLastPayment(){
     e.history.shift();
     if(lastAction.kind === 'bank'){
       e.months = (Number(e.months)||0) + lastAction.monthsDelta;
+    } else if(lastAction.kind === 'prepay'){
+      e.months = (Number(e.months)||0) + lastAction.monthsDelta;
+      e.totalPrepaid = Math.max(0, (Number(e.totalPrepaid)||0) - lastAction.prepaidDelta);
+      e.totalInterestSaved = Math.max(0, (Number(e.totalInterestSaved)||0) - lastAction.interestSavedDelta);
     } else {
       e.pending = (Number(e.pending)||0) + lastAction.pendingDelta;
     }
