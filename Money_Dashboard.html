@@ -183,6 +183,7 @@
   .entry-actions button.del{color:var(--danger); border-color:#F3D8D3;}
   .entry-actions button.pay{color:var(--good); border-color:#D2E8E4;}
   .entry-actions button.prepay{color:var(--teal); border-color:#D2E8E4;}
+  .entry-actions button.more{color:var(--marigold); border-color:#F0E0B0;}
   .empty-note{font-size:12.5px; color:var(--muted); text-align:center; padding:14px 0;}
   .cleared-toggle{
     font-size:12.5px; font-weight:700; color:var(--teal); text-align:center;
@@ -641,16 +642,11 @@ let didRecoveryMergeCheck = false;
 
 let saveInFlight = false;
 let saveQueued = false;
-function queueSave(){
-  if(applyingRemoteMoney) return;
-  state.updatedAt = Date.now();
-  saveMoneyLocalCache();
-  setStatus('Saving…', '');
-  if(saveTimer) clearTimeout(saveTimer);
-  saveTimer = setTimeout(async ()=>{
-    if(!docRef) return;
-    if(saveInFlight){ saveQueued = true; return; }
-    saveInFlight = true;
+function doSave(){
+  if(!docRef) return;
+  if(saveInFlight){ saveQueued = true; return; }
+  saveInFlight = true;
+  (async ()=>{
     try{
       const remoteSnap = await docRef.get();
       let payload = {
@@ -686,9 +682,34 @@ function queueSave(){
       setStatus('Save failed — check connection.', 'err');
     }finally{
       saveInFlight = false;
-      if(saveQueued){ saveQueued = false; queueSave(); }
+      if(saveQueued){ saveQueued = false; doSave(); }
     }
-  }, 400);
+  })();
+}
+
+function queueSave(){
+  if(applyingRemoteMoney) return;
+  state.updatedAt = Date.now();
+  saveMoneyLocalCache();
+  setStatus('Saving…', '');
+  if(saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(doSave, 400);
+}
+
+// Bypasses the 400ms debounce and writes immediately — for when you want to be
+// sure the sync has actually gone out before switching devices, closing the
+// tab, etc., rather than trusting the autosave timer.
+function manualSave(){
+  state.updatedAt = Date.now();
+  saveMoneyLocalCache();
+  if(saveTimer){ clearTimeout(saveTimer); saveTimer = null; }
+  setStatus('Saving…', '');
+  const btn = document.getElementById('manualSaveBtn');
+  if(btn){ btn.textContent = 'Saving…'; btn.disabled = true; }
+  doSave();
+  setTimeout(()=>{
+    if(btn){ btn.textContent = '💾 Save Now'; btn.disabled = false; }
+  }, 700);
 }
 
 /* ================= HELPERS ================= */
@@ -1292,6 +1313,15 @@ function entryCardHTML(type, e){
   const whatIfButton = (type === 'bank' && !isUpcoming(e) && (e.months||0) > 0)
     ? `<button onclick="openWhatIf('${e.id}')">What If?</button>`
     : '';
+  // "Log more" — for money you've borrowed or lent, real life keeps adding to
+  // the same relationship (friend A lends you 20k, then later another 10k).
+  // Rather than forcing a new duplicate card per top-up, this adds to the
+  // existing entry's pending + total amount. Deliberately NOT gated on
+  // pending > 0, so it also works to "reopen" a fully-settled entry.
+  const moreLabel = type === 'borrowed' ? '+ Borrowed More' : (type === 'lent' ? '+ Lent More' : '');
+  const moreButton = (type === 'borrowed' || type === 'lent')
+    ? `<button class="more" onclick="logAdditionalAmount('${type}','${e.id}')">${moreLabel}</button>`
+    : '';
 
   // A manual rank from the Priority List tab (see moveRank/renderPriorityList)
   // takes precedence over the coarse High/Medium/Low bucket, since it's the
@@ -1321,6 +1351,7 @@ function entryCardHTML(type, e){
       ${payButton}
       ${prepayButton}
       ${whatIfButton}
+      ${moreButton}
       <button onclick="editEntry('${type}','${e.id}')">Edit</button>
       <button class="del" onclick="deleteEntry('${type}','${e.id}')">Delete</button>
     </div>
@@ -1344,8 +1375,15 @@ function renderHistoryView(){
   ['bank','borrowed','lent'].forEach(type=>{
     state[type].forEach(e=>{
       (e.history||[]).forEach(h=>{
-        const sub = type === 'bank' ? (h.type === 'prepay' ? 'Lump Sum' : 'EMI Payment') : typeLabel[type];
-        rows.push({ date: h.date, amount: h.amount, name: e.name, type, id: e.id, sub });
+        let sub;
+        if(type === 'bank'){
+          sub = h.type === 'prepay' ? 'Lump Sum' : 'EMI Payment';
+        } else if(type === 'borrowed'){
+          sub = h.type === 'increase' ? 'Borrowed More' : 'Repaid';
+        } else {
+          sub = h.type === 'increase' ? 'Lent More' : 'Collected';
+        }
+        rows.push({ date: h.date, amount: h.amount, name: e.name, type, id: e.id, sub, historyType: h.type||'' });
       });
     });
   });
@@ -1369,8 +1407,18 @@ function renderHistoryView(){
   }
 
   list.innerHTML = filterNote + rows.map(r=>{
-    const sign = r.type === 'lent' ? '+' : '-';
-    const color = r.type === 'lent' ? 'var(--good)' : 'var(--danger)';
+    // Bank: always an outflow (you're paying it down). Borrowed: getting more
+    // is an inflow (money came to you); repaying it is an outflow. Lent: giving
+    // more is an outflow (money left you); getting it collected back is an inflow.
+    let sign, good;
+    if(r.type === 'bank'){
+      sign = '-'; good = false;
+    } else if(r.type === 'borrowed'){
+      good = r.historyType === 'increase'; sign = good ? '+' : '-';
+    } else {
+      good = r.historyType !== 'increase'; sign = good ? '+' : '-';
+    }
+    const color = good ? 'var(--good)' : 'var(--danger)';
     return `<div class="history-row">
       <div>
         <div class="history-name">${escapeHtml(r.name)}</div>
@@ -1598,12 +1646,41 @@ function logPayment(type, id){
 
     e.pending = Math.max(0, pending - amt);
     e.history = e.history || [];
-    e.history.unshift({ date: new Date().toISOString().slice(0,10), amount: amt });
+    e.history.unshift({ date: new Date().toISOString().slice(0,10), amount: amt, type: 'repay' });
     e.lastUpdated = new Date().toISOString().slice(0,10);
 
     lastAction = { type, id, kind: 'friend', pendingDelta: amt };
     showUndoToast(`Payment of ${fmt(amt)} logged for ${e.name}.`);
   }
+
+  render();
+  queueSave();
+}
+
+// Adds to an existing Borrowed/Lent entry rather than creating a duplicate
+// card — for when the same person lends/borrows again later (e.g. "A" first
+// lent 20k, then later another 10k). Bumps both the pending balance AND the
+// total-amount denominator used by the settled/pending progress bar, so the
+// progress bar doesn't wrongly jump backwards. Works even on a fully-settled
+// (pending = 0) entry, effectively reopening it.
+function logAdditionalAmount(type, id){
+  const e = state[type].find(x=>x.id===id);
+  if(!e) return;
+  const verb = type === 'borrowed' ? 'borrowed from' : 'lent to';
+  const amtStr = prompt(`Log more money ${verb} "${e.name}".\nEnter the additional amount:`);
+  if(amtStr === null) return;
+  const amt = Number(amtStr);
+  if(!amt || amt <= 0){ alert('Enter a valid positive amount.'); return; }
+
+  e.pending = (Number(e.pending)||0) + amt;
+  e.totalAmount = (Number(e.totalAmount)||0) + amt;
+  e.history = e.history || [];
+  e.history.unshift({ date: new Date().toISOString().slice(0,10), amount: amt, type: 'increase' });
+  e.lastUpdated = new Date().toISOString().slice(0,10);
+
+  lastAction = { type, id, kind: 'increase', amountDelta: amt };
+  const label = type === 'borrowed' ? 'Borrowed' : 'Lent';
+  showUndoToast(`${label} ${fmt(amt)} more logged for ${e.name}.`);
 
   render();
   queueSave();
@@ -1922,6 +1999,9 @@ function undoLastPayment(){
       e.months = (Number(e.months)||0) + lastAction.monthsDelta;
       e.totalPrepaid = Math.max(0, (Number(e.totalPrepaid)||0) - lastAction.prepaidDelta);
       e.totalInterestSaved = Math.max(0, (Number(e.totalInterestSaved)||0) - lastAction.interestSavedDelta);
+    } else if(lastAction.kind === 'increase'){
+      e.pending = Math.max(0, (Number(e.pending)||0) - lastAction.amountDelta);
+      e.totalAmount = Math.max(0, (Number(e.totalAmount)||0) - lastAction.amountDelta);
     } else {
       e.pending = (Number(e.pending)||0) + lastAction.pendingDelta;
     }
@@ -1940,6 +2020,7 @@ render();
 <footer style="max-width:900px;margin:40px auto;padding:16px;text-align:center;">
   <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Data backup</div>
   <div style="display:flex;gap:8px;justify-content:center;">
+    <button id="manualSaveBtn" onclick="manualSave()" style="font-size:11px;padding:5px 10px;cursor:pointer;font-weight:700;">💾 Save Now</button>
     <button onclick="downloadMoneyBackup()" style="font-size:11px;padding:5px 10px;cursor:pointer;">⬇ Backup data</button>
     <button onclick="document.getElementById('moneyImportFile').click()" style="font-size:11px;padding:5px 10px;cursor:pointer;">Import backup</button>
     <input type="file" id="moneyImportFile" style="display:none" accept=".json" onchange="importMoneyBackup(event)">
